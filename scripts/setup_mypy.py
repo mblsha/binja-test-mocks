@@ -39,7 +39,7 @@ ignore_missing_imports = False
 """
 
 
-def main():
+def main() -> None:
     """Generate and print mypy configuration."""
     if len(sys.argv) > 1 and sys.argv[1] == "--save":
         config = generate_mypy_config()

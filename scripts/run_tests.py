@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 
-def main():
+def main() -> None:
     """Run pytest with FORCE_BINJA_MOCK environment variable set."""
     # Ensure we're using mocks
     env = os.environ.copy()

@@ -5,14 +5,14 @@ import os
 os.environ["FORCE_BINJA_MOCK"] = "1"
 
 
-def test_basic_import():
+def test_basic_import() -> None:
     """Test that we can import the package."""
     import binja_test_mocks
 
     assert binja_test_mocks.__version__ == "0.1.0"
 
 
-def test_binja_api_import():
+def test_binja_api_import() -> None:
     """Test that binja_api can be imported and sets up mocks."""
 
     # Verify that binaryninja module is mocked
@@ -27,7 +27,7 @@ def test_binja_api_import():
     assert RegisterName is not None
 
 
-def test_mock_llil():
+def test_mock_llil() -> None:
     """Test mock LLIL functionality."""
     from binja_test_mocks import binja_api  # noqa: F401
     from binja_test_mocks.mock_llil import MockLowLevelILFunction
@@ -39,7 +39,7 @@ def test_mock_llil():
     assert il.ils[0].op == "NOP"
 
 
-def test_tokens():
+def test_tokens() -> None:
     """Test token utilities."""
     from binja_test_mocks import binja_api  # noqa: F401
     from binja_test_mocks.tokens import TInt, TText
@@ -56,7 +56,7 @@ def test_tokens():
     assert hasattr(text_token.__class__, "token_type")
 
 
-def test_stubs_available():
+def test_stubs_available() -> None:
     """Test that type stubs are accessible."""
     from pathlib import Path
 

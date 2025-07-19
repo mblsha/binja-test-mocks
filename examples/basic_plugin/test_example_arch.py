@@ -16,7 +16,7 @@ from binja_test_mocks.mock_llil import MockLowLevelILFunction, set_size_lookup
 set_size_lookup({1: ".b", 2: ".w", 4: ".4"}, {"b": 1, "w": 2, "4": 4})
 
 
-def test_nop_instruction():
+def test_nop_instruction() -> None:
     """Test NOP instruction handling."""
     arch = ExampleArchitecture()
     data = b"\x90"  # NOP
@@ -37,7 +37,7 @@ def test_nop_instruction():
     assert il.ils[0].op == "NOP"
 
 
-def test_jmp_instruction():
+def test_jmp_instruction() -> None:
     """Test JMP instruction handling."""
     arch = ExampleArchitecture()
     data = b"\xc3\x00\x20\x00\x00"  # JMP 0x2000
@@ -69,7 +69,7 @@ def test_jmp_instruction():
     assert il.ils[0].ops[0].ops[0] == 0x2000
 
 
-def test_ret_instruction():
+def test_ret_instruction() -> None:
     """Test RET instruction handling."""
     arch = ExampleArchitecture()
     data = b"\xc9"  # RET
@@ -89,7 +89,7 @@ def test_ret_instruction():
     assert il.ils[0].op == "RET"
 
 
-def test_unknown_instruction():
+def test_unknown_instruction() -> None:
     """Test handling of unknown instructions."""
     arch = ExampleArchitecture()
     data = b"\xff"  # Unknown opcode

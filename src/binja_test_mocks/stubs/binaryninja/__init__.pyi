@@ -46,6 +46,9 @@ class Architecture:
     # Workaround for type checker not understanding __getitem__ on metaclass
     @classmethod
     def __class_getitem__(cls, name: str) -> Architecture: ...
+    
+    @classmethod
+    def register(cls) -> None: ...
 
 # Unfortunately type checkers have issues with dynamic indexing, so we need this workaround
 def __getattr__(name: str) -> Any: ...

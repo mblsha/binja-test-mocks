@@ -35,7 +35,7 @@ def generate_pyright_config(package_path: Path | None = None) -> dict:
     }
 
 
-def main():
+def main() -> None:
     """Generate and print pyright configuration."""
     if len(sys.argv) > 1 and sys.argv[1] == "--save":
         config = generate_pyright_config()

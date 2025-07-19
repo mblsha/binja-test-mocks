@@ -22,7 +22,7 @@ class ExampleArchitecture(Architecture):
         RegisterName("pc"): RegisterInfo(RegisterName("pc"), 4),
     }
 
-    def get_instruction_info(self, data: bytes, addr: int):
+    def get_instruction_info(self, data: bytes, addr: int) -> InstructionInfo | None:
         """Analyze instruction for branches and calls."""
         if len(data) < 1:
             return None
@@ -103,3 +103,5 @@ class ExampleArchitecture(Architecture):
         else:
             il.append(il.unimplemented())
             return 1
+        
+        return None
