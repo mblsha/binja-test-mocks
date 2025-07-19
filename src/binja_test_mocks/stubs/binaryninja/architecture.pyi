@@ -1,21 +1,17 @@
-from typing import Any, Dict, List, Union
-from . import RegisterInfo, RegisterName, FlagWriteTypeName
+from typing import Any
 
-class Architecture(object):
+from . import FlagWriteTypeName, RegisterInfo, RegisterName
+
+class Architecture:
     address_size: int
     name: str
-    regs: Dict[RegisterName, RegisterInfo]
+    regs: dict[RegisterName, RegisterInfo]
     stack_pointer: str
-    flag_write_types: List[Union[FlagWriteTypeName, str]]
+    flag_write_types: list[FlagWriteTypeName | str]
     standalone_platform: Any
 
-    def __getitem__(self, name: str) -> "Architecture":
-        ...
-    
+    def __getitem__(self, name: str) -> Architecture: ...
     @classmethod
-    def __class_getitem__(cls, name: str) -> "Architecture":
-        ...
+    def __class_getitem__(cls, name: str) -> Architecture: ...
 
-
-class FlagName(str):
-    ...
+class FlagName(str): ...

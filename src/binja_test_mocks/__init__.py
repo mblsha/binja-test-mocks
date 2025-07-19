@@ -1,8 +1,8 @@
 """binja-test-mocks - Mock Binary Ninja API for testing plugins without a license."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Re-export commonly used items for convenience
-from . import binja_api  # noqa: F401
+from . import binja_api
 
 __all__ = ["binja_api"]

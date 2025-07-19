@@ -1,15 +1,15 @@
-from . import binja_api # noqa: F401
-
+from binaryninja import Architecture, InstructionInfo
 from binaryninja.enums import BranchType
-from binaryninja import InstructionInfo, Architecture
-from typing import List, Optional, Tuple
+
+from . import binja_api  # noqa: F401
+
 
 class MockAnalysisInfo(InstructionInfo):  # type: ignore[misc]
     def __init__(self) -> None:
         self.length = 0
-        self.mybranches: List[Tuple[BranchType, Optional[int]]] = []
+        self.mybranches: list[tuple[BranchType, int | None]] = []
 
-    def add_branch(self, branch_type: BranchType, target: Optional[int] = None,
-                   arch: Optional[Architecture] = None) -> None:
+    def add_branch(
+        self, branch_type: BranchType, target: int | None = None, arch: Architecture | None = None
+    ) -> None:
         self.mybranches.append((branch_type, target))
-

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Protocol, Tuple, TypedDict, cast
+from typing import Protocol, TypedDict, cast
 
 from .mock_llil import MockIntrinsic, MockLLIL
 
@@ -63,8 +64,8 @@ class State:
 
 
 class ResultFlags(TypedDict, total=False):
-    C: Optional[int]
-    Z: Optional[int]
+    C: int | None
+    Z: int | None
 
 
 @dataclass
@@ -74,7 +75,7 @@ class FlagInfo:
 
 
 # Default bit positions for generic flags in the combined flag register "F".
-FLAG_LAYOUT: Dict[str, FlagInfo] = {
+FLAG_LAYOUT: dict[str, FlagInfo] = {
     "C": FlagInfo("F", 0),
     "Z": FlagInfo("F", 1),
 }
@@ -85,18 +86,18 @@ FlagSetter = Callable[[str, int], None]
 
 
 EvalLLILType = Callable[
-    [MockLLIL, Optional[int], RegistersLike, Memory, State, FlagGetter, FlagSetter],
-    Tuple[Optional[int], Optional[ResultFlags]],
+    [MockLLIL, int | None, RegistersLike, Memory, State, FlagGetter, FlagSetter],
+    tuple[int | None, ResultFlags | None],
 ]
 
 
 # Global registry for architecture-specific intrinsic evaluators
-_INTRINSIC_REGISTRY: Dict[str, EvalLLILType] = {}
+_INTRINSIC_REGISTRY: dict[str, EvalLLILType] = {}
 
 
 def register_intrinsic(name: str, evaluator: EvalLLILType) -> None:
     """Register an architecture-specific intrinsic evaluator.
-    
+
     Args:
         name: The intrinsic name (e.g., "TCL", "HALT", "OFF")
         evaluator: The evaluation function that implements the intrinsic behavior
@@ -104,12 +105,12 @@ def register_intrinsic(name: str, evaluator: EvalLLILType) -> None:
     _INTRINSIC_REGISTRY[name] = evaluator
 
 
-def get_intrinsic_evaluator(name: str) -> Optional[EvalLLILType]:
+def get_intrinsic_evaluator(name: str) -> EvalLLILType | None:
     """Get the evaluator for a specific intrinsic.
-    
+
     Args:
         name: The intrinsic name
-        
+
     Returns:
         The evaluator function if registered, None otherwise
     """
@@ -121,15 +122,16 @@ def evaluate_llil(
     regs: RegistersLike,
     memory: Memory,
     state: State,
-    get_flag: Optional[FlagGetter] = None,
-    set_flag: Optional[FlagSetter] = None,
-) -> Tuple[Optional[int], Optional[ResultFlags]]:
+    get_flag: FlagGetter | None = None,
+    set_flag: FlagSetter | None = None,
+) -> tuple[int | None, ResultFlags | None]:
     op_name_bare = llil.bare_op()
     llil_flags_spec = llil.flags()  # e.g., "CZ", "Z", or None
     size = llil.width()
     current_op_name_for_eval = op_name_bare
 
     if get_flag is None:
+
         def get_flag_default(name: str) -> int:
             info = FLAG_LAYOUT.get(name)
             if info is None:
@@ -140,6 +142,7 @@ def evaluate_llil(
         get_flag = get_flag_default
 
     if set_flag is None:
+
         def set_flag_default(name: str, value: int) -> None:
             info = FLAG_LAYOUT.get(name)
             if info is None:
@@ -166,22 +169,20 @@ def evaluate_llil(
     else:
         f = EVAL_LLIL.get(current_op_name_for_eval)
         if f is None:
-            raise NotImplementedError(
-                f"Eval for {current_op_name_for_eval} not implemented"
-            )
+            raise NotImplementedError(f"Eval for {current_op_name_for_eval} not implemented")
 
     result_value, op_defined_flags = f(llil, size, regs, memory, state, get_flag, set_flag)
 
     if llil_flags_spec is not None and llil_flags_spec != "0":
-        flag_from_result: Dict[str, Callable[[int, int], int]] = {
+        flag_from_result: dict[str, Callable[[int, int], int]] = {
             "Z": lambda val, sz: int((val & ((1 << (sz * 8)) - 1)) == 0),
             "C": lambda val, sz: int(val > ((1 << (sz * 8)) - 1)),
         }
 
         for flag_name in llil_flags_spec:
-            value_to_set: Optional[int] = None
+            value_to_set: int | None = None
             if op_defined_flags:
-                value_to_set = cast(Optional[int], op_defined_flags.get(flag_name))
+                value_to_set = cast(int | None, op_defined_flags.get(flag_name))
 
             if value_to_set is None and isinstance(result_value, int):
                 assert size is not None, (
@@ -200,13 +201,13 @@ def evaluate_llil(
 def _create_const_eval() -> EvalLLILType:
     def _eval(
         llil: MockLLIL,
-        size: Optional[int],
+        size: int | None,
         regs: RegistersLike,
         memory: Memory,
         state: State,
         get_flag: FlagGetter,
         set_flag: FlagSetter,
-    ) -> Tuple[int, Optional[ResultFlags]]:
+    ) -> tuple[int, ResultFlags | None]:
         result = llil.ops[0]
         assert isinstance(result, int)
         return result, None
@@ -216,25 +217,25 @@ def _create_const_eval() -> EvalLLILType:
 
 def eval_reg(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[int, Optional[ResultFlags]]:
+) -> tuple[int, ResultFlags | None]:
     return regs.get_by_name(llil.ops[0].name), None
 
 
 def eval_set_reg(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     assert isinstance(llil.ops[1], MockLLIL)
     value_to_set, _ = evaluate_llil(llil.ops[1], regs, memory, state, get_flag, set_flag)
     assert value_to_set is not None
@@ -244,25 +245,25 @@ def eval_set_reg(
 
 def eval_flag(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[int, Optional[ResultFlags]]:
+) -> tuple[int, ResultFlags | None]:
     return get_flag(llil.ops[0].name), None
 
 
 def eval_set_flag(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     assert isinstance(llil.ops[1], MockLLIL)
     value_to_set, _ = evaluate_llil(llil.ops[1], regs, memory, state, get_flag, set_flag)
     assert value_to_set is not None
@@ -273,13 +274,13 @@ def eval_set_flag(
 def _create_logical_eval(op_func: Callable[[int, int], int]) -> EvalLLILType:
     def _eval(
         llil: MockLLIL,
-        size: Optional[int],
+        size: int | None,
         regs: RegistersLike,
         memory: Memory,
         state: State,
         get_flag: FlagGetter,
         set_flag: FlagSetter,
-    ) -> Tuple[int, Optional[ResultFlags]]:
+    ) -> tuple[int, ResultFlags | None]:
         assert isinstance(llil.ops[0], MockLLIL) and isinstance(llil.ops[1], MockLLIL)
         op1_val, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
         op2_val, _ = evaluate_llil(llil.ops[1], regs, memory, state, get_flag, set_flag)
@@ -296,13 +297,13 @@ def _create_arithmetic_eval(
 ) -> EvalLLILType:
     def _eval(
         llil: MockLLIL,
-        size: Optional[int],
+        size: int | None,
         regs: RegistersLike,
         memory: Memory,
         state: State,
         get_flag: FlagGetter,
         set_flag: FlagSetter,
-    ) -> Tuple[int, Optional[ResultFlags]]:
+    ) -> tuple[int, ResultFlags | None]:
         assert size is not None
         assert isinstance(llil.ops[0], MockLLIL) and isinstance(llil.ops[1], MockLLIL)
         op1_val, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
@@ -323,16 +324,16 @@ def _create_arithmetic_eval(
     return _eval
 
 
-def _create_shift_eval(op_func: Callable[..., Tuple[int, ResultFlags]]) -> EvalLLILType:
+def _create_shift_eval(op_func: Callable[..., tuple[int, ResultFlags]]) -> EvalLLILType:
     def _eval(
         llil: MockLLIL,
-        size: Optional[int],
+        size: int | None,
         regs: RegistersLike,
         memory: Memory,
         state: State,
         get_flag: FlagGetter,
         set_flag: FlagSetter,
-    ) -> Tuple[int, Optional[ResultFlags]]:
+    ) -> tuple[int, ResultFlags | None]:
         assert size is not None
         values = []
         for operand in llil.ops:
@@ -349,13 +350,13 @@ def _create_shift_eval(op_func: Callable[..., Tuple[int, ResultFlags]]) -> EvalL
 
 def eval_pop(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[int, Optional[ResultFlags]]:
+) -> tuple[int, ResultFlags | None]:
     assert size
     addr = regs.get_by_name("S")
     result = memory.read_bytes(addr, size)
@@ -365,13 +366,13 @@ def eval_pop(
 
 def eval_push(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     assert size
     assert isinstance(llil.ops[0], MockLLIL)
     value_to_push, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
@@ -384,37 +385,37 @@ def eval_push(
 
 def eval_nop(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     return None, None
 
 
 def eval_unimpl(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     raise NotImplementedError(f"Low-level IL operation {llil.op} is not implemented")
 
 
 def eval_store(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     assert size
     assert isinstance(llil.ops[0], MockLLIL) and isinstance(llil.ops[1], MockLLIL)
     dest_addr, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
@@ -426,13 +427,13 @@ def eval_store(
 
 def eval_load(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[int, Optional[ResultFlags]]:
+) -> tuple[int, ResultFlags | None]:
     assert size
     assert isinstance(llil.ops[0], MockLLIL)
     addr, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
@@ -442,13 +443,13 @@ def eval_load(
 
 def eval_ret(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     assert isinstance(llil.ops[0], MockLLIL)
     addr_val, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
     assert isinstance(addr_val, int)
@@ -458,13 +459,13 @@ def eval_ret(
 
 def eval_jump(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     assert isinstance(llil.ops[0], MockLLIL)
     addr, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
     assert isinstance(addr, int)
@@ -474,13 +475,13 @@ def eval_jump(
 
 def eval_call(
     llil: MockLLIL,
-    size: Optional[int],
+    size: int | None,
     regs: RegistersLike,
     memory: Memory,
     state: State,
     get_flag: FlagGetter,
     set_flag: FlagSetter,
-) -> Tuple[None, Optional[ResultFlags]]:
+) -> tuple[None, ResultFlags | None]:
     assert isinstance(llil.ops[0], MockLLIL)
     addr, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
     assert isinstance(addr, int)
@@ -516,23 +517,25 @@ def to_signed(value: int, size_bytes: int) -> int:
     return value
 
 
-def _create_comparison_eval(op_func: Callable[[int, int], bool], signed: bool = False) -> EvalLLILType:
+def _create_comparison_eval(
+    op_func: Callable[[int, int], bool], signed: bool = False
+) -> EvalLLILType:
     def _eval(
         llil: MockLLIL,
-        size: Optional[int],
+        size: int | None,
         regs: RegistersLike,
         memory: Memory,
         state: State,
         get_flag: FlagGetter,
         set_flag: FlagSetter,
-    ) -> Tuple[int, Optional[ResultFlags]]:
+    ) -> tuple[int, ResultFlags | None]:
         if signed:
             assert size is not None, "Size must be provided for signed comparison"
         assert isinstance(llil.ops[0], MockLLIL) and isinstance(llil.ops[1], MockLLIL)
         op1_val, _ = evaluate_llil(llil.ops[0], regs, memory, state, get_flag, set_flag)
         op2_val, _ = evaluate_llil(llil.ops[1], regs, memory, state, get_flag, set_flag)
         assert op1_val is not None and op2_val is not None
-        
+
         if signed:
             assert size is not None  # Already checked above
             op1_val = to_signed(int(op1_val), size)
@@ -540,13 +543,13 @@ def _create_comparison_eval(op_func: Callable[[int, int], bool], signed: bool = 
         else:
             op1_val = int(op1_val)
             op2_val = int(op2_val)
-        
+
         return int(op_func(op1_val, op2_val)), None
 
     return _eval
 
 
-def _shift_impl(size: int, val: int, count: int, *, left: bool) -> Tuple[int, ResultFlags]:
+def _shift_impl(size: int, val: int, count: int, *, left: bool) -> tuple[int, ResultFlags]:
     """Common implementation for logical shifts."""
     width = size * 8
     mask = (1 << width) - 1 if width > 0 else 0
@@ -568,15 +571,15 @@ def _shift_impl(size: int, val: int, count: int, *, left: bool) -> Tuple[int, Re
     return result, {"C": carry_out, "Z": 1 if result == 0 else 0}
 
 
-def _lsl_impl(size: int, val: int, count: int) -> Tuple[int, ResultFlags]:
+def _lsl_impl(size: int, val: int, count: int) -> tuple[int, ResultFlags]:
     return _shift_impl(size, val, count, left=True)
 
 
-def _lsr_impl(size: int, val: int, count: int) -> Tuple[int, ResultFlags]:
+def _lsr_impl(size: int, val: int, count: int) -> tuple[int, ResultFlags]:
     return _shift_impl(size, val, count, left=False)
 
 
-def _rotate_impl(size: int, val: int, count: int, *, left: bool) -> Tuple[int, ResultFlags]:
+def _rotate_impl(size: int, val: int, count: int, *, left: bool) -> tuple[int, ResultFlags]:
     """Rotate ``val`` left or right by ``count`` bits."""
     width = size * 8
     mask = (1 << width) - 1 if width > 0 else 0
@@ -602,17 +605,17 @@ def _rotate_impl(size: int, val: int, count: int, *, left: bool) -> Tuple[int, R
     return result, {"C": carry_out, "Z": 1 if result == 0 else 0}
 
 
-def _ror_impl(size: int, val: int, count: int) -> Tuple[int, ResultFlags]:
+def _ror_impl(size: int, val: int, count: int) -> tuple[int, ResultFlags]:
     return _rotate_impl(size, val, count, left=False)
 
 
-def _rol_impl(size: int, val: int, count: int) -> Tuple[int, ResultFlags]:
+def _rol_impl(size: int, val: int, count: int) -> tuple[int, ResultFlags]:
     return _rotate_impl(size, val, count, left=True)
 
 
 def _rotate_through_carry_impl(
     size: int, val: int, count: int, carry_in: int, *, left: bool
-) -> Tuple[int, ResultFlags]:
+) -> tuple[int, ResultFlags]:
     """Rotate ``val`` through carry left or right by ``count`` bits."""
     width = size * 8
     mask = (1 << width) - 1 if width > 0 else 0
@@ -631,24 +634,24 @@ def _rotate_through_carry_impl(
     return result, {"C": new_carry_out, "Z": 1 if result == 0 else 0}
 
 
-def _rrc_impl(size: int, val: int, count: int, carry_in: int) -> Tuple[int, ResultFlags]:
+def _rrc_impl(size: int, val: int, count: int, carry_in: int) -> tuple[int, ResultFlags]:
     return _rotate_through_carry_impl(size, val, count, carry_in, left=False)
 
 
-def _rlc_impl(size: int, val: int, count: int, carry_in: int) -> Tuple[int, ResultFlags]:
+def _rlc_impl(size: int, val: int, count: int, carry_in: int) -> tuple[int, ResultFlags]:
     return _rotate_through_carry_impl(size, val, count, carry_in, left=True)
 
 
-def _create_intrinsic_eval(action: Optional[Callable[[State], None]] = None) -> EvalLLILType:
+def _create_intrinsic_eval(action: Callable[[State], None] | None = None) -> EvalLLILType:
     def _eval(
         llil: MockLLIL,
-        size: Optional[int],
+        size: int | None,
         regs: RegistersLike,
         memory: Memory,
         state: State,
         get_flag: FlagGetter,
         set_flag: FlagSetter,
-    ) -> Tuple[None, Optional[ResultFlags]]:
+    ) -> tuple[None, ResultFlags | None]:
         if action is not None:
             action(state)
         return None, None
@@ -656,7 +659,7 @@ def _create_intrinsic_eval(action: Optional[Callable[[State], None]] = None) -> 
     return _eval
 
 
-EVAL_LLIL: Dict[str, EvalLLILType] = {
+EVAL_LLIL: dict[str, EvalLLILType] = {
     "CONST": _create_const_eval(),
     "CONST_PTR": _create_const_eval(),
     "REG": eval_reg,
@@ -708,11 +711,7 @@ EVAL_LLIL: Dict[str, EvalLLILType] = {
     "LSL": _create_shift_eval(lambda size, val, count: _lsl_impl(size, val, count)),
     "LSR": _create_shift_eval(lambda size, val, count: _lsr_impl(size, val, count)),
     "ROR": _create_shift_eval(lambda size, val, count: _ror_impl(size, val, count)),
-    "RRC": _create_shift_eval(
-        lambda size, val, count, carry: _rrc_impl(size, val, count, carry)
-    ),
+    "RRC": _create_shift_eval(lambda size, val, count, carry: _rrc_impl(size, val, count, carry)),
     "ROL": _create_shift_eval(lambda size, val, count: _rol_impl(size, val, count)),
-    "RLC": _create_shift_eval(
-        lambda size, val, count, carry: _rlc_impl(size, val, count, carry)
-    ),
+    "RLC": _create_shift_eval(lambda size, val, count, carry: _rlc_impl(size, val, count, carry)),
 }

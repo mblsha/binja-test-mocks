@@ -15,7 +15,7 @@ import os
 import sys
 import types
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 # Force use of mock when FORCE_BINJA_MOCK environment variable is set
 _force_mock = os.environ.get("FORCE_BINJA_MOCK", "").lower() in ("1", "true", "yes")
@@ -117,19 +117,20 @@ if not _has_binja():
 
     class Type:
         """Mock Type class for Binary Ninja types."""
+
         def __init__(self, type_str: str = "unknown"):
             self._type_str = type_str
-        
+
         @staticmethod
-        def array(element_type: 'Type', count: int) -> 'Type':
+        def array(element_type: Type, count: int) -> Type:
             """Create an array type."""
             return Type(f"array[{count}]")
-        
+
         @staticmethod
-        def int(width: int, sign: bool = True, altname: str = "") -> 'Type':
+        def int(width: int, sign: bool = True, altname: str = "") -> Type:
             """Create an integer type."""
             return Type(f"int{width}")
-        
+
         def __repr__(self) -> str:
             return f"Type({self._type_str})"
 
@@ -146,7 +147,9 @@ if not _has_binja():
         "default_memory_size": 0x100000,  # 1MB
     }
 
-    def configure_mock_binaryview(filename: Optional[str] = None, memory_size: Optional[int] = None) -> None:
+    def configure_mock_binaryview(
+        filename: str | None = None, memory_size: int | None = None
+    ) -> None:
         """Configure mock BinaryView defaults for testing."""
         if filename is not None:
             _mock_config["default_filename"] = filename
@@ -168,13 +171,13 @@ if not _has_binja():
         def read(self, addr: int, length: int) -> bytes:
             """Read bytes from mock memory."""
             if addr + length > len(self._memory):
-                return b'\x00' * length
-            return bytes(self._memory[addr:addr+length])
+                return b"\x00" * length
+            return bytes(self._memory[addr : addr + length])
 
         def write_memory(self, addr: int, data: bytes) -> None:
             """Write data to mock memory for testing."""
             if addr + len(data) <= len(self._memory):
-                self._memory[addr:addr+len(data)] = data
+                self._memory[addr : addr + len(data)] = data
 
     # Add configuration function to the module
     binaryview_mod.configure_mock_binaryview = configure_mock_binaryview  # type: ignore [attr-defined]
@@ -190,10 +193,11 @@ if not _has_binja():
 
     class Function:
         """Mock Binary Ninja Function class."""
-        
+
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             # Create a mock architecture
             from .mock_llil import MockArch
+
             self.arch = MockArch()
 
     function_mod.Function = Function  # type: ignore [attr-defined]
@@ -206,13 +210,13 @@ if not _has_binja():
         name: str = ""  # Added type hint
 
         @classmethod
-        def __class_getitem__(cls, _name: str) -> "Architecture":
+        def __class_getitem__(cls, _name: str) -> Architecture:
             return cls()
 
     class RegisterName(str):
         name: str  # Declare the attribute
 
-        def __new__(cls, name: str) -> "RegisterName":
+        def __new__(cls, name: str) -> RegisterName:
             obj = str.__new__(cls, name)
             obj.name = name
             return obj
@@ -220,7 +224,7 @@ if not _has_binja():
     class IntrinsicName(str):
         name: str  # Declare the attribute
 
-        def __new__(cls, name: str) -> "IntrinsicName":
+        def __new__(cls, name: str) -> IntrinsicName:
             obj = str.__new__(cls, name)
             obj.name = name
             return obj
@@ -228,7 +232,7 @@ if not _has_binja():
     class FlagName(str):
         name: str  # Declare the attribute
 
-        def __new__(cls, name: str) -> "FlagName":
+        def __new__(cls, name: str) -> FlagName:
             obj = str.__new__(cls, name)
             obj.name = name
             return obj
@@ -236,7 +240,7 @@ if not _has_binja():
     class FlagWriteTypeName(str):
         name: str  # Declare the attribute
 
-        def __new__(cls, name: str) -> "FlagWriteTypeName":
+        def __new__(cls, name: str) -> FlagWriteTypeName:
             obj = str.__new__(cls, name)
             obj.name = name
             return obj
@@ -261,7 +265,7 @@ if not _has_binja():
     class ExpressionIndex(int):
         pass
 
-    def LLIL_TEMP(n: int) -> ExpressionIndex:
+    def LLIL_TEMP(n: int) -> ExpressionIndex:  # noqa: N802
         return ExpressionIndex(0x80000000 + n)
 
     class LowLevelILFunction:
@@ -280,7 +284,7 @@ if not _has_binja():
             if name_to_process.startswith("LLIL_"):
                 name_to_process = name_to_process[5:]
 
-            SZ_LOOKUP_DICT = {1: ".b", 2: ".w", 3: ".l"}
+            SZ_LOOKUP_DICT = {1: ".b", 2: ".w", 3: ".l"}  # noqa: N806
 
             final_op_name_parts = [name_to_process]
             if size is not None and size in SZ_LOOKUP_DICT:
@@ -307,9 +311,7 @@ if not _has_binja():
         ) -> object:
             from types import SimpleNamespace  # Ensure SimpleNamespace is available
 
-            return self.expr(
-                SimpleNamespace(name=f"LLIL_{name}"), *ops, size=size, flags=flags
-            )
+            return self.expr(SimpleNamespace(name=f"LLIL_{name}"), *ops, size=size, flags=flags)
 
         def unimplemented(self) -> object:
             return self._op("UNIMPL", None)
@@ -334,9 +336,7 @@ if not _has_binja():
             if isinstance(
                 reg_obj, ExpressionIndex
             ):  # No need for llil_mod. here as ExpressionIndex is local
-                processed_reg_obj = mreg(
-                    f"TEMP{reg_obj - 0x80000000}"
-                )  # mreg is from .mock_llil
+                processed_reg_obj = mreg(f"TEMP{reg_obj - 0x80000000}")  # mreg is from .mock_llil
             elif isinstance(reg_obj, str):
                 processed_reg_obj = mreg(reg_obj)  # mreg is from .mock_llil
             return self._op("REG", size, processed_reg_obj)
@@ -351,19 +351,13 @@ if not _has_binja():
                 "SET_REG", size, processed_reg_obj, value, flags="0"
             )  # Explicitly pass flags="0"
 
-        def add(
-            self, size: int, a: object, b: object, flags: object | None = None
-        ) -> object:
+        def add(self, size: int, a: object, b: object, flags: object | None = None) -> object:
             return self._op("ADD", size, a, b, flags=flags)
 
-        def sub(
-            self, size: int, a: object, b: object, flags: object | None = None
-        ) -> object:
+        def sub(self, size: int, a: object, b: object, flags: object | None = None) -> object:
             return self._op("SUB", size, a, b, flags=flags)
 
-        def mult(
-            self, size: int, a: object, b: object, flags: object | None = None
-        ) -> object:
+        def mult(self, size: int, a: object, b: object, flags: object | None = None) -> object:
             return self._op("MUL", size, a, b, flags=flags)
 
         def div_signed(
@@ -371,19 +365,13 @@ if not _has_binja():
         ) -> object:
             return self._op("DIVS", size, a, b, flags=flags)
 
-        def and_expr(
-            self, size: int, a: object, b: object, flags: object | None = None
-        ) -> object:
+        def and_expr(self, size: int, a: object, b: object, flags: object | None = None) -> object:
             return self._op("AND", size, a, b, flags=flags)
 
-        def or_expr(
-            self, size: int, a: object, b: object, flags: object | None = None
-        ) -> object:
+        def or_expr(self, size: int, a: object, b: object, flags: object | None = None) -> object:
             return self._op("OR", size, a, b, flags=flags)
 
-        def xor_expr(
-            self, size: int, a: object, b: object, flags: object | None = None
-        ) -> object:
+        def xor_expr(self, size: int, a: object, b: object, flags: object | None = None) -> object:
             return self._op("XOR", size, a, b, flags=flags)
 
         def shift_left(
@@ -444,9 +432,7 @@ if not _has_binja():
         def compare_signed_greater_equal(self, size: int, a: object, b: object) -> object:
             return self._op("CMP_SGE", size, a, b)
 
-        def compare_unsigned_greater_than(
-            self, size: int, a: object, b: object
-        ) -> object:
+        def compare_unsigned_greater_than(self, size: int, a: object, b: object) -> object:
             return self._op("CMP_UGT", size, a, b)
 
         def flag(self, flag_obj: object) -> object:  # Renamed flag to flag_obj
@@ -505,25 +491,27 @@ if not _has_binja():
     bn.lowlevelil = llil_mod  # type: ignore [attr-defined]
     sys.modules["binaryninja.lowlevelil"] = llil_mod
     from .mock_llil import (
-        mreg,
         MockFlag,
+        mreg,
     )  # mreg, MockFlag are used in the stub LowLevelILFunction
 
     @dataclass
     class InstructionInfo:
         length: int = 0
-        
+
         def __init__(self) -> None:
             self.length = 0
             self.branches: list[object] = []
 
-        def add_branch(self, branch_type: object, target: object | None = None, arch: object | None = None) -> None:
+        def add_branch(
+            self, branch_type: object, target: object | None = None, arch: object | None = None
+        ) -> None:
             # Create a mock branch object
             class MockBranch:
                 def __init__(self, branch_type: object, target: object | None):
                     self.type = branch_type
                     self.target = target
-            
+
             self.branches.append(MockBranch(branch_type, target))
 
     bn.InstructionInfo = InstructionInfo  # type: ignore [attr-defined]
@@ -568,7 +556,7 @@ if not _has_binja():
 
     class UIContext:
         @staticmethod
-        def activeContext() -> None:
+        def activeContext() -> None:  # noqa: N802
             return None
 
     interaction_mod.UIContext = UIContext  # type: ignore [attr-defined]

@@ -2,14 +2,15 @@
 
 # based on https://github.com/whitequark/binja-avnera/blob/main/mc/tokens.py
 
+import enum
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Any, ClassVar
 
-from . import binja_api  # noqa: F401 -- make sure Binary Ninja stubs are loaded
 from binaryninja import InstructionTextToken
 from binaryninja.enums import InstructionTextTokenType
 
-import enum
-from typing import Iterable, Any, List, Tuple, ClassVar
-from dataclasses import dataclass
+from . import binja_api  # noqa: F401 -- make sure Binary Ninja stubs are loaded
 
 
 class Token:
@@ -20,7 +21,7 @@ class Token:
             return False
         return self.__dict__ == getattr(other, "__dict__", {})
 
-    def binja(self) -> Tuple[InstructionTextTokenType, str]:
+    def binja(self) -> tuple[InstructionTextTokenType, str]:
         raise NotImplementedError(f"binja() not implemented for {type(self)}")
 
     def to_binja(self) -> InstructionTextToken:
@@ -28,7 +29,7 @@ class Token:
         return InstructionTextToken(kind, data)
 
 
-def asm(parts: List[Token]) -> List[InstructionTextToken]:
+def asm(parts: list[Token]) -> list[InstructionTextToken]:
     """Convert tokens to Binary Ninja ``InstructionTextToken`` objects."""
 
     return [part.to_binja() for part in parts]
@@ -53,7 +54,7 @@ class _BaseToken(Token):
     def __str__(self) -> str:
         return self.value
 
-    def binja(self) -> Tuple[InstructionTextTokenType, str]:
+    def binja(self) -> tuple[InstructionTextTokenType, str]:
         return (self.token_type, self.__str__())
 
 
@@ -86,7 +87,9 @@ class MemType(enum.Enum):
 class TBegMem(Token):
     mem_type: MemType
 
-    token_type: ClassVar[InstructionTextTokenType] = InstructionTextTokenType.BeginMemoryOperandToken
+    token_type: ClassVar[InstructionTextTokenType] = (
+        InstructionTextTokenType.BeginMemoryOperandToken
+    )
 
     def __repr__(self) -> str:
         return f"TBegMem({self.mem_type})"
@@ -94,7 +97,7 @@ class TBegMem(Token):
     def __str__(self) -> str:
         return "[" if self.mem_type == MemType.EXTERNAL else "("
 
-    def binja(self) -> Tuple[InstructionTextTokenType, str]:
+    def binja(self) -> tuple[InstructionTextTokenType, str]:
         return (self.token_type, self.__str__())
 
 
@@ -110,7 +113,7 @@ class TEndMem(Token):
     def __str__(self) -> str:
         return "]" if self.mem_type == MemType.EXTERNAL else ")"
 
-    def binja(self) -> Tuple[InstructionTextTokenType, str]:
+    def binja(self) -> tuple[InstructionTextTokenType, str]:
         return (self.token_type, self.__str__())
 
 
@@ -126,10 +129,10 @@ class TAddr(Token):
     def __str__(self) -> str:
         return f"{self.value:05X}"
 
-    def binja(self) -> Tuple[InstructionTextTokenType, str]:
+    def binja(self) -> tuple[InstructionTextTokenType, str]:
         return (self.token_type, self.__str__())
+
 
 @dataclass
 class TReg(_BaseToken):
     token_type: ClassVar[InstructionTextTokenType] = InstructionTextTokenType.RegisterToken
-

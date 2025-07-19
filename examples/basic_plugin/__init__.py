@@ -15,9 +15,8 @@ if os.environ.get("FORCE_BINJA_MOCK") == "1":
 
 # Check if we're running in Binary Ninja
 try:
-    from binaryninja import Architecture
     from .example_arch import ExampleArchitecture
-    
+
     # Register the architecture
     ExampleArchitecture.register()
 except ImportError:

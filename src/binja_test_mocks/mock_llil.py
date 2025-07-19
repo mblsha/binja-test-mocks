@@ -1,15 +1,16 @@
 # Make LLIL unit-testable.
 
-from . import binja_api  # noqa: F401
+from dataclasses import dataclass
+from typing import Any
+
 from binaryninja.lowlevelil import (
+    ExpressionIndex,
+    ILSourceLocation,
     LowLevelILFunction,
     LowLevelILLabel,
-    ILSourceLocation,
-    ExpressionIndex,
 )
-from dataclasses import dataclass
-from typing import Any, List, Optional, Union
 
+from . import binja_api  # noqa: F401
 
 # Default size lookup table - can be overridden per architecture
 DEFAULT_SZ_LOOKUP = {1: ".b", 2: ".w", 3: ".l", 4: ".error"}
@@ -20,10 +21,10 @@ SZ_LOOKUP = DEFAULT_SZ_LOOKUP.copy()
 SUFFIX_SZ = DEFAULT_SUFFIX_SZ.copy()
 
 
-def set_size_lookup(size_lookup: dict[int, str], suffix_sz: dict[str, int] = None) -> None:
+def set_size_lookup(size_lookup: dict[int, str], suffix_sz: dict[str, int] | None = None) -> None:
     """
     Set custom size lookup tables for architecture-specific width suffixes.
-    
+
     Args:
         size_lookup: Map from byte size to suffix string (e.g., {4: ".4"})
         suffix_sz: Optional reverse mapping from suffix to size (e.g., {"4": 4})
@@ -54,7 +55,7 @@ class MockFlag:
 # we cannot use real Architecture (it requires a Binary Ninja license)
 class MockArch:
     address_size = 4  # SCUMM6 uses 4-byte addresses
-    
+
     def get_reg_index(self, name: object) -> Any:
         assert name != "IMR"
 
@@ -82,9 +83,9 @@ class MockLLIL:
     """
 
     op: str
-    ops: List[Any]
+    ops: list[Any]
 
-    def width(self) -> Optional[int]:
+    def width(self) -> int | None:
         op = self.op.split("{")[0]
         opsplit = op.split(".")
         op = opsplit[0]
@@ -95,26 +96,23 @@ class MockLLIL:
             size = None
         return size
 
-    def flags(self) -> Optional[str]:
+    def flags(self) -> str | None:
         flagssplit = self.op.split("{")
-        if len(flagssplit) > 1:
-            flags = flagssplit[1].rstrip("}")
-        else:
-            flags = None
+        flags = flagssplit[1].rstrip("}") if len(flagssplit) > 1 else None
         return flags
 
     def bare_op(self) -> str:
         return self.op.split("{")[0].split(".")[0]
 
 
-ExprType = Union[MockLLIL, ExpressionIndex]
+ExprType = MockLLIL | ExpressionIndex
 
 
 def mreg(name: str) -> MockReg:
     return MockReg(name)
 
 
-def mllil(op: str, ops: Optional[List[object]] = None) -> MockLLIL:
+def mllil(op: str, ops: list[object] | None = None) -> MockLLIL:
     if ops is None:
         ops = []
     return MockLLIL(op, ops)
@@ -162,6 +160,7 @@ class MockGoto:
 
 class MockSourceFunction:
     """Mock source function with arch attribute."""
+
     def __init__(self) -> None:
         self.arch = MockArch()
 
@@ -170,9 +169,9 @@ class MockLowLevelILFunction(LowLevelILFunction):  # type: ignore[misc]
     def __init__(self) -> None:
         # self.handle = MockHandle()
         self._arch = MockArch()
-        self.ils: List[MockLLIL] = []
+        self.ils: list[MockLLIL] = []
         self.source_function = MockSourceFunction()
-    
+
     @property
     def arch(self) -> MockArch:
         """The architecture for this LLIL function."""
@@ -187,7 +186,7 @@ class MockLowLevelILFunction(LowLevelILFunction):  # type: ignore[misc]
         self.append(result)
         return result
 
-    def goto(self, label: LowLevelILLabel, loc: Optional[ILSourceLocation] = None) -> Any:
+    def goto(self, label: LowLevelILLabel, loc: ILSourceLocation | None = None) -> Any:
         return MockGoto(label)
 
     def if_expr(self, cond, t, f) -> Any:  # type: ignore
@@ -203,16 +202,13 @@ class MockLowLevelILFunction(LowLevelILFunction):  # type: ignore[misc]
     def expr(self, *args, **kwargs) -> ExprType:  # type: ignore
         llil, *ops = args
         kwargs.pop("source_location", None)
-        size = kwargs.get("size", None)
-        flags = kwargs.get("flags", None)
+        size = kwargs.get("size")
+        flags = kwargs.get("flags")
 
         name = llil.name
         # remove the "LLIL_" prefix
         name = name[5:]
-        if isinstance(size, int):
-            suffix = SZ_LOOKUP.get(size, "")
-        else:
-            suffix = ""
+        suffix = SZ_LOOKUP.get(size, "") if isinstance(size, int) else ""
         name = name + suffix
         name = name + f"{{{flags}}}" if flags is not None else name
         return MockLLIL(name, ops)
