@@ -32,7 +32,7 @@ def _has_binja() -> bool:
     if _force_mock:
         return False
     try:
-        import binaryninja  # noqa: F401
+        import binaryninja  # noqa: F401  # type: ignore[import-not-found]
 
         return True
     except ImportError:
