@@ -34,7 +34,7 @@ jobs:
       - name: Run MyPy
         run: |
           export FORCE_BINJA_MOCK=1
-          mypy src/binja_test_mocks tests --explicit-package-bases
+          mypy .
 
   pyright:
     runs-on: ubuntu-latest
