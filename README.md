@@ -1,5 +1,9 @@
 # binja-test-mocks
 
+[![CI](https://github.com/mblsha/binja-test-mocks/actions/workflows/tests.yml/badge.svg)](https://github.com/mblsha/binja-test-mocks/actions/workflows/tests.yml)
+[![PyPI version](https://badge.fury.io/py/binja-test-mocks.svg)](https://badge.fury.io/py/binja-test-mocks)
+[![Python versions](https://img.shields.io/pypi/pyversions/binja-test-mocks.svg)](https://pypi.org/project/binja-test-mocks/)
+
 Mock Binary Ninja API for testing Binary Ninja plugins without requiring a Binary Ninja license.
 
 ## Overview
