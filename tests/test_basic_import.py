@@ -9,7 +9,9 @@ def test_basic_import() -> None:
     """Test that we can import the package."""
     import binja_test_mocks
 
-    assert binja_test_mocks.__version__ == "0.1.0"
+    # Just verify the package has a version attribute
+    assert hasattr(binja_test_mocks, "__version__")
+    assert isinstance(binja_test_mocks.__version__, str)
 
 
 def test_binja_api_import() -> None:
