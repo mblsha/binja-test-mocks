@@ -4,13 +4,14 @@ import os
 
 os.environ["FORCE_BINJA_MOCK"] = "1"
 
+# Import mock API first to set up the binaryninja module
+from binja_test_mocks import binja_api  # noqa: F401
+from binja_test_mocks.mock_llil import MockLowLevelILFunction, set_size_lookup
+
 from binaryninja.enums import BranchType
 
 # Import after setting up mocks
 from example_arch import ExampleArchitecture
-
-from binja_test_mocks import binja_api  # noqa: F401
-from binja_test_mocks.mock_llil import MockLowLevelILFunction, set_size_lookup
 
 # Set up size lookup for our 32-bit architecture
 set_size_lookup({1: ".b", 2: ".w", 4: ".4"}, {"b": 1, "w": 2, "4": 4})

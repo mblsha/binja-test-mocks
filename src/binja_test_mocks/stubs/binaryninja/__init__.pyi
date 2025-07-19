@@ -46,7 +46,6 @@ class Architecture:
     # Workaround for type checker not understanding __getitem__ on metaclass
     @classmethod
     def __class_getitem__(cls, name: str) -> Architecture: ...
-
     @classmethod
     def register(cls) -> None: ...
 
