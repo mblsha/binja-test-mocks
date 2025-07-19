@@ -103,5 +103,5 @@ class ExampleArchitecture(Architecture):
         else:
             il.append(il.unimplemented())
             return 1
-        
+
         return None
