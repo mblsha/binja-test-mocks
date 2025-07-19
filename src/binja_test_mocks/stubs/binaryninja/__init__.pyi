@@ -77,6 +77,7 @@ class InstructionInfo:
     """Minimal stub for Binary Ninja InstructionInfo."""
 
     length: int
+    branches: list[Any]
 
     def __init__(self) -> None: ...
     def add_branch(

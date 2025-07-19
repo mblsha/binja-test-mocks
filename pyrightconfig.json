@@ -1,0 +1,33 @@
+{
+  "include": [
+    "src",
+    "tests",
+    "examples",
+    "scripts"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    "src/binja_test_mocks/stubs"
+  ],
+  "extraPaths": [
+    "/Users/mblsha/Library/Application Support/Binary Ninja/plugins/binja-test-mocks/src/binja_test_mocks/stubs"
+  ],
+  "typeCheckingMode": "basic",
+  "pythonVersion": "3.10",
+  "pythonPlatform": "All",
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "reportPrivateImportUsage": false,
+  "reportMissingModuleSource": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownParameterType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownLambdaType": false,
+  "reportInvalidTypeForm": false,
+  "reportUnusedImport": false,
+  "reportUnusedFunction": false,
+  "stubPath": "/Users/mblsha/Library/Application Support/Binary Ninja/plugins/binja-test-mocks/src/binja_test_mocks/stubs"
+}
