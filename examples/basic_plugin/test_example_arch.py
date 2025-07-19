@@ -5,7 +5,7 @@ import os
 os.environ["FORCE_BINJA_MOCK"] = "1"
 
 # Import mock API first to set up the binaryninja module
-from binja_test_mocks import binja_api  # noqa: F401
+from binja_test_mocks import binja_api  # noqa: F401, I001
 from binja_test_mocks.mock_llil import MockLowLevelILFunction, set_size_lookup
 
 from binaryninja.enums import BranchType
