@@ -165,7 +165,7 @@ class MockSourceFunction:
         self.arch = MockArch()
 
 
-class MockLowLevelILFunction(LowLevelILFunction):  # type: ignore[misc]
+class MockLowLevelILFunction(LowLevelILFunction):
     def __init__(self) -> None:
         # self.handle = MockHandle()
         self._arch = MockArch()
@@ -173,12 +173,12 @@ class MockLowLevelILFunction(LowLevelILFunction):  # type: ignore[misc]
         self._source_function = MockSourceFunction()
 
     @property
-    def source_function(self) -> Any:  # type: ignore[override]
+    def source_function(self) -> Any:
         """The source function that this LLIL belongs to."""
         return self._source_function
 
     @property
-    def arch(self) -> Any:  # type: ignore[override]
+    def arch(self) -> Any:
         """The architecture for this LLIL function."""
         return self._arch
 

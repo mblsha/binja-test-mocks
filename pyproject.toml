@@ -63,9 +63,39 @@ exclude_lines = [
 
 [tool.mypy]
 mypy_path = "src/binja_test_mocks/stubs"
-strict = true
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+strict_optional = true
+exclude = "src/binja_test_mocks/stubs/"
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "binaryninja.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "binja_test_mocks.*"
+ignore_missing_imports = false
+
+[[tool.mypy.overrides]]
+module = "binja_test_mocks.scripts.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.binja_test_mocks.scripts.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.scripts.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "example_arch"
+ignore_missing_imports = true
 
 [tool.pyright]
 include = ["src"]

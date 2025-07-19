@@ -4,7 +4,7 @@ from binaryninja.enums import BranchType
 from . import binja_api  # noqa: F401
 
 
-class MockAnalysisInfo(InstructionInfo):  # type: ignore[misc]
+class MockAnalysisInfo(InstructionInfo):
     def __init__(self) -> None:
         self.length = 0
         self.mybranches: list[tuple[BranchType, int | None]] = []

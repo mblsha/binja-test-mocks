@@ -12,7 +12,7 @@ class MockFile:
         self.filename = filename
 
 
-class MockBinaryView(BinaryView):  # type: ignore[misc]
+class MockBinaryView(BinaryView):
     """Generic mock BinaryView for testing."""
 
     def __init__(self, filename: str = "test.bin"):
