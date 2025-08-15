@@ -55,7 +55,7 @@ class _BaseToken(Token):
         return self.value
 
     def binja(self) -> tuple[InstructionTextTokenType, str]:
-        return (self.token_type, self.__str__())
+        return (self.token_type, str(self))
 
 
 @dataclass
@@ -98,7 +98,7 @@ class TBegMem(Token):
         return "[" if self.mem_type == MemType.EXTERNAL else "("
 
     def binja(self) -> tuple[InstructionTextTokenType, str]:
-        return (self.token_type, self.__str__())
+        return (self.token_type, str(self))
 
 
 @dataclass
@@ -114,7 +114,7 @@ class TEndMem(Token):
         return "]" if self.mem_type == MemType.EXTERNAL else ")"
 
     def binja(self) -> tuple[InstructionTextTokenType, str]:
-        return (self.token_type, self.__str__())
+        return (self.token_type, str(self))
 
 
 @dataclass
@@ -130,7 +130,7 @@ class TAddr(Token):
         return f"{self.value:05X}"
 
     def binja(self) -> tuple[InstructionTextTokenType, str]:
-        return (self.token_type, self.__str__())
+        return (self.token_type, str(self))
 
 
 @dataclass

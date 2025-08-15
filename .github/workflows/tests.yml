@@ -12,43 +12,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
       - name: Install dependencies
-        run: python -m pip install -e .[dev]
+        run: uv sync --dev
       - name: Run Ruff Check
-        run: ruff check .
+        run: uv run ruff check .
       - name: Run Ruff Format Check
-        run: ruff format --check .
+        run: uv run ruff format --check .
 
   mypy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
       - name: Install dependencies
-        run: python -m pip install -e .[dev]
+        run: uv sync --dev
       - name: Run MyPy
         run: |
           export FORCE_BINJA_MOCK=1
-          mypy .
+          uv run mypy .
 
   pyright:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
       - name: Install dependencies
-        run: python -m pip install -e .[dev]
+        run: uv sync --dev
       - name: Run Pyright
         run: |
           export FORCE_BINJA_MOCK=1
-          pyright
+          uv run pyright
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -57,15 +60,16 @@ jobs:
         python-version: ['3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
-        run: python -m pip install -e .[dev]
+        run: uv sync --dev
       - name: Run Pytest
         run: |
           export FORCE_BINJA_MOCK=1
-          pytest tests -v --cov=binja_test_mocks --cov-report=term-missing --cov-report=xml
+          uv run pytest tests -v --cov=binja_test_mocks --cov-report=term-missing --cov-report=xml
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
         if: matrix.python-version == '3.11'
@@ -77,30 +81,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
       - name: Install package
-        run: python -m pip install -e .[dev]
+        run: uv sync --dev
       - name: Test example plugin
         run: |
           cd examples/basic_plugin
           export FORCE_BINJA_MOCK=1
-          python test_example_arch.py
+          uv run python test_example_arch.py
 
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install build dependencies
-        run: python -m pip install build twine
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
       - name: Build package
-        run: python -m build
+        run: uv build
       - name: Check package
-        run: twine check dist/*
+        run: |
+          uv pip install --system twine
+          twine check dist/*
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

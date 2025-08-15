@@ -296,7 +296,8 @@ if not _has_binja():
                 final_op_name_parts.append(f"{{{flags}}}")
 
             final_op_name = "".join(final_op_name_parts)
-            # Return a SimpleNamespace that might be compatible with what eval expects from a MockLLIL
+            # Return a SimpleNamespace that might be compatible with what eval
+            # expects from a MockLLIL
             # This provides .op, .ops, and lambda-based .width(), .flags(), .bare_op()
             return SimpleNamespace(
                 op=final_op_name,
@@ -329,7 +330,8 @@ if not _has_binja():
             self, size: int, reg_obj: object
         ) -> object:  # Renamed reg to reg_obj to avoid conflict
             # Ensure llil_mod is accessible if used here for ExpressionIndex comparison
-            # The check `isinstance(reg, llil_mod.ExpressionIndex)` might need llil_mod to be defined earlier
+            # The check `isinstance(reg, llil_mod.ExpressionIndex)` might need
+            # llil_mod to be defined earlier
             # or this logic should be guarded if llil_mod is this current module being defined.
             # For the stub, we can assume `reg` is either str or our `ExpressionIndex`.
             processed_reg_obj = reg_obj

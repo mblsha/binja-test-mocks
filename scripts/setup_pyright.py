@@ -2,6 +2,7 @@
 """Generate pyright configuration for Binary Ninja plugin projects."""
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -16,7 +17,10 @@ def generate_pyright_config(package_path: Path | None = None) -> dict:
             package_path = Path(binja_test_mocks.__file__).parent
         except ImportError:
             print("Error: binja-test-mocks is not installed", file=sys.stderr)
-            print("Install it with: pip install binja-test-mocks", file=sys.stderr)
+            if shutil.which("uv"):
+                print("Install it with: uv sync --dev", file=sys.stderr)
+            else:
+                print("Install it with: pip install binja-test-mocks", file=sys.stderr)
             sys.exit(1)
 
     stubs_path = package_path / "stubs"
@@ -46,7 +50,7 @@ def main() -> None:
             print("Remove it first or edit manually", file=sys.stderr)
             sys.exit(1)
 
-        output_path.write_text(json.dumps(config, indent=2) + "\n")
+        output_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
         print(f"Created {output_path}")
     else:
         print(json.dumps(generate_pyright_config(), indent=2))

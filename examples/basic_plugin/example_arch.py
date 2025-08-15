@@ -92,7 +92,7 @@ class ExampleArchitecture(Architecture):
         if opcode == 0x90:  # NOP
             il.append(il.nop())
             return 1
-        elif opcode == 0xC3:  # JMP
+        if opcode == 0xC3:  # JMP
             if len(data) >= 5:
                 target = int.from_bytes(data[1:5], "little")
                 il.append(il.jump(il.const(4, target)))

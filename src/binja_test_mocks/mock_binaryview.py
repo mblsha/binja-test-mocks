@@ -51,4 +51,3 @@ class MockBinaryView(BinaryView):
     def define_user_type(self, name: str, type_obj: Any) -> None:
         """Mock implementation of define_user_type."""
         # For testing purposes, we just accept the call without error
-        pass

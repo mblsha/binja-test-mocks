@@ -186,7 +186,8 @@ def evaluate_llil(
 
             if value_to_set is None and isinstance(result_value, int):
                 assert size is not None, (
-                    f"F{flag_name} flag setting from result_value requires size for {current_op_name_for_eval}"
+                    f"F{flag_name} flag setting from result_value requires "
+                    f"size for {current_op_name_for_eval}"
                 )
                 update_func = flag_from_result.get(flag_name)
                 if update_func is not None:
@@ -564,7 +565,7 @@ def _shift_impl(size: int, val: int, count: int, *, left: bool) -> tuple[int, Re
             carry_out = (val >> (width - count)) & 1
         result = (val << count) & mask
     else:
-        if count > 0 and count <= width and width > 0:
+        if 0 < count <= width and width > 0:
             carry_out = (val >> (count - 1)) & 1
         result = (val >> count) & mask
 
@@ -708,10 +709,10 @@ EVAL_LLIL: dict[str, EvalLLILType] = {
     "CMP_SGE": _create_comparison_eval(lambda a, b: a >= b, signed=True),
     "CMP_SLT": _create_comparison_eval(lambda a, b: a < b, signed=True),
     "CMP_SLE": _create_comparison_eval(lambda a, b: a <= b, signed=True),
-    "LSL": _create_shift_eval(lambda size, val, count: _lsl_impl(size, val, count)),
-    "LSR": _create_shift_eval(lambda size, val, count: _lsr_impl(size, val, count)),
-    "ROR": _create_shift_eval(lambda size, val, count: _ror_impl(size, val, count)),
-    "RRC": _create_shift_eval(lambda size, val, count, carry: _rrc_impl(size, val, count, carry)),
-    "ROL": _create_shift_eval(lambda size, val, count: _rol_impl(size, val, count)),
-    "RLC": _create_shift_eval(lambda size, val, count, carry: _rlc_impl(size, val, count, carry)),
+    "LSL": _create_shift_eval(_lsl_impl),
+    "LSR": _create_shift_eval(_lsr_impl),
+    "ROR": _create_shift_eval(_ror_impl),
+    "RRC": _create_shift_eval(_rrc_impl),
+    "ROL": _create_shift_eval(_rol_impl),
+    "RLC": _create_shift_eval(_rlc_impl),
 }
