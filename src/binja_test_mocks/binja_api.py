@@ -185,10 +185,27 @@ if not _has_binja():
             if addr + len(data) <= len(self._memory):
                 self._memory[addr : addr + len(data)] = data
 
+        @classmethod
+        def register(cls) -> None:
+            """Mock register method for binary view registration."""
+            pass
+
+    # Mock BinaryViewType for plugin registration
+    class BinaryViewType:
+        def __getitem__(self, name: str) -> BinaryViewType:
+            """Mock getitem for view type lookup."""
+            return self
+        
+        def register_arch(self, arch_id: int, endianness: object, arch: object) -> None:
+            """Mock register_arch method."""
+            pass
+
     # Add configuration function to the module
     binaryview_mod.configure_mock_binaryview = configure_mock_binaryview  # type: ignore [attr-defined]
     binaryview_mod.BinaryView = BinaryView  # type: ignore [attr-defined]
+    binaryview_mod.BinaryViewType = BinaryViewType  # type: ignore [attr-defined]
     bn.binaryview = binaryview_mod  # type: ignore [attr-defined]
+    bn.BinaryViewType = BinaryViewType()  # type: ignore [attr-defined]
 
     # Also expose configuration at top level for easy access
     bn.configure_mock_binaryview = configure_mock_binaryview  # type: ignore [attr-defined]
@@ -229,6 +246,10 @@ if not _has_binja():
             arch = Architecture()
             arch.name = name
             return arch
+
+        def register_calling_convention(self, calling_convention: object) -> None:
+            """Mock register_calling_convention method."""
+            pass
 
     class RegisterName(str):
         name: str  # Declare the attribute
@@ -625,6 +646,9 @@ if not _has_binja():
             self.branches.append(MockBranch(branch_type, target))
 
     bn.InstructionInfo = InstructionInfo  # type: ignore [attr-defined]
+    # Also add to function module for compatibility with some plugins
+    function_mod.InstructionInfo = InstructionInfo  # type: ignore [attr-defined]
+    function_mod.InstructionTextToken = InstructionTextToken  # type: ignore [attr-defined]
 
     @dataclass
     class RegisterInfo:
@@ -635,6 +659,7 @@ if not _has_binja():
             self.extend = extend
 
     bn.RegisterInfo = RegisterInfo  # type: ignore [attr-defined]
+    function_mod.RegisterInfo = RegisterInfo  # type: ignore [attr-defined]
 
     @dataclass
     class IntrinsicInfo:
@@ -642,9 +667,12 @@ if not _has_binja():
         outputs: list[Any]  # Use list[Any] for stub
 
     bn.IntrinsicInfo = IntrinsicInfo  # type: ignore [attr-defined]
+    function_mod.IntrinsicInfo = IntrinsicInfo  # type: ignore [attr-defined]
 
     class CallingConvention:
-        pass
+        def __init__(self, arch: object = None, name: str = ""):
+            self.arch = arch
+            self.name = name
 
     bn.CallingConvention = CallingConvention  # type: ignore [attr-defined]
     # bn.Architecture = Architecture was listed, but arch_mod.Architecture is already set
