@@ -218,6 +218,17 @@ if not _has_binja():
         @classmethod
         def __class_getitem__(cls, _name: str) -> Architecture:
             return cls()
+        
+        @classmethod
+        def register(cls) -> None:
+            """Mock register method for architecture registration."""
+            pass
+        
+        def __getitem__(self, name: str) -> Architecture:
+            """Mock getitem for architecture lookup."""
+            arch = Architecture()
+            arch.name = name
+            return arch
 
     class RegisterName(str):
         name: str  # Declare the attribute
