@@ -637,12 +637,24 @@ if not _has_binja():
     bn.Architecture = Architecture  # type: ignore [attr-defined]
 
     def log_error(msg: str) -> None:
-        print(msg, file=sys.stderr)
+        print(f"[ERROR] {msg}", file=sys.stderr)
+    
+    def log_info(msg: str) -> None:
+        print(f"[INFO] {msg}")
+    
+    def log_warn(msg: str) -> None:
+        print(f"[WARN] {msg}", file=sys.stderr)
+    
+    def log_debug(msg: str) -> None:
+        print(f"[DEBUG] {msg}")
 
     bn.log_error = log_error  # type: ignore [attr-defined]
 
     log_mod = types.ModuleType("binaryninja.log")
     log_mod.log_error = log_error  # type: ignore [attr-defined]
+    log_mod.log_info = log_info  # type: ignore [attr-defined]
+    log_mod.log_warn = log_warn  # type: ignore [attr-defined]
+    log_mod.log_debug = log_debug  # type: ignore [attr-defined]
     bn.log = log_mod  # type: ignore [attr-defined]
     sys.modules["binaryninja.log"] = log_mod
 
