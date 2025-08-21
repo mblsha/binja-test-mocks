@@ -195,7 +195,7 @@ if not _has_binja():
         def __getitem__(self, name: str) -> BinaryViewType:
             """Mock getitem for view type lookup."""
             return self
-        
+
         def register_arch(self, arch_id: int, endianness: object, arch: object) -> None:
             """Mock register_arch method."""
             pass
