@@ -84,6 +84,11 @@ if not _has_binja():
         ZeroFlagRole = 1
         OverflowFlagRole = 2
         CarryFlagRole = 3
+        HalfCarryFlagRole = 4
+        SpecialFlagRole = 5
+        PositiveSignFlagRole = 6
+        OrderedFlagRole = 7
+        UnorderedFlagRole = 8
 
     class ImplicitRegisterExtend(enum.Enum):
         SignExtendToFullWidth = 0
@@ -262,11 +267,89 @@ if not _has_binja():
 
     llil_mod = types.ModuleType("binaryninja.lowlevelil")
 
+    class LowLevelILOperation(enum.IntEnum):
+        """Low Level IL Operations"""
+        LLIL_NOP = 0
+        LLIL_SET_REG = 1
+        LLIL_SET_REG_SPLIT = 2
+        LLIL_SET_FLAG = 3
+        LLIL_LOAD = 4
+        LLIL_STORE = 5
+        LLIL_PUSH = 6
+        LLIL_POP = 7
+        LLIL_REG = 8
+        LLIL_CONST = 9
+        LLIL_CONST_PTR = 10
+        LLIL_FLAG = 11
+        LLIL_FLAG_BIT = 12
+        LLIL_ADD = 13
+        LLIL_ADC = 14
+        LLIL_SUB = 15
+        LLIL_SBB = 16
+        LLIL_AND = 17
+        LLIL_OR = 18
+        LLIL_XOR = 19
+        LLIL_LSL = 20
+        LLIL_LSR = 21
+        LLIL_ASR = 22
+        LLIL_ROL = 23
+        LLIL_RLC = 24
+        LLIL_ROR = 25
+        LLIL_RRC = 26
+        LLIL_MUL = 27
+        LLIL_NEG = 38
+        LLIL_NOT = 39
+        LLIL_SX = 40
+        LLIL_ZX = 41
+        LLIL_JUMP = 43
+        LLIL_CALL = 45
+        LLIL_RET = 48
+        LLIL_NORET = 49
+        LLIL_IF = 50
+        LLIL_GOTO = 51
+        LLIL_FLAG_COND = 52
+        LLIL_CMP_E = 54
+        LLIL_CMP_NE = 55
+        LLIL_UNIMPL = 72
+
+    class LowLevelILFlagCondition(enum.IntEnum):
+        """Low Level IL Flag Conditions"""
+        LLFC_E = 0
+        LLFC_NE = 1
+        LLFC_SLT = 2
+        LLFC_ULT = 3
+        LLFC_SLE = 4
+        LLFC_ULE = 5
+        LLFC_SGE = 6
+        LLFC_UGE = 7
+        LLFC_SGT = 8
+        LLFC_UGT = 9
+        LLFC_NEG = 10
+        LLFC_POS = 11
+        LLFC_O = 12
+        LLFC_NO = 13
+
     class ExpressionIndex(int):
         pass
 
     def LLIL_TEMP(n: int) -> ExpressionIndex:  # noqa: N802
         return ExpressionIndex(0x80000000 + n)
+    
+    def LLIL_GET_TEMP_REG_INDEX(n: int) -> int:  # noqa: N802
+        """Get the temporary register index from a temp expression index."""
+        if isinstance(n, ExpressionIndex):
+            return n - 0x80000000
+        return n
+    
+    class ILRegister:
+        """Mock IL Register representation."""
+        def __init__(self, index: int):
+            self.index = index
+    
+    class ILFlag:
+        """Mock IL Flag representation."""
+        def __init__(self, name: str):
+            self.name = name
 
     class LowLevelILFunction:
         def expr(
@@ -484,8 +567,13 @@ if not _has_binja():
     class ILSourceLocation:
         instr_index: int = 0
 
+    llil_mod.LowLevelILOperation = LowLevelILOperation  # type: ignore [attr-defined]
+    llil_mod.LowLevelILFlagCondition = LowLevelILFlagCondition  # type: ignore [attr-defined]
     llil_mod.ExpressionIndex = ExpressionIndex  # type: ignore [attr-defined]
     llil_mod.LLIL_TEMP = LLIL_TEMP  # type: ignore [attr-defined]
+    llil_mod.LLIL_GET_TEMP_REG_INDEX = LLIL_GET_TEMP_REG_INDEX  # type: ignore [attr-defined]
+    llil_mod.ILRegister = ILRegister  # type: ignore [attr-defined]
+    llil_mod.ILFlag = ILFlag  # type: ignore [attr-defined]
     llil_mod.LowLevelILFunction = LowLevelILFunction  # type: ignore [attr-defined]
     llil_mod.LowLevelILLabel = LowLevelILLabel  # type: ignore [attr-defined]
     llil_mod.ILSourceLocation = ILSourceLocation  # type: ignore [attr-defined]
