@@ -101,6 +101,7 @@ if not _has_binja():
     enums_mod.Endianness = Endianness  # type: ignore [attr-defined]
     enums_mod.FlagRole = FlagRole  # type: ignore [attr-defined]
     enums_mod.ImplicitRegisterExtend = ImplicitRegisterExtend  # type: ignore [attr-defined]
+    # Note: LowLevelILOperation and LowLevelILFlagCondition will be added after llil_mod is defined
 
     bn.enums = enums_mod  # type: ignore [attr-defined]
     sys.modules["binaryninja.enums"] = enums_mod
@@ -577,6 +578,10 @@ if not _has_binja():
     llil_mod.LowLevelILFunction = LowLevelILFunction  # type: ignore [attr-defined]
     llil_mod.LowLevelILLabel = LowLevelILLabel  # type: ignore [attr-defined]
     llil_mod.ILSourceLocation = ILSourceLocation  # type: ignore [attr-defined]
+
+    # Also add to enums module for compatibility
+    enums_mod.LowLevelILOperation = LowLevelILOperation  # type: ignore [attr-defined]
+    enums_mod.LowLevelILFlagCondition = LowLevelILFlagCondition  # type: ignore [attr-defined]
 
     bn.lowlevelil = llil_mod  # type: ignore [attr-defined]
     sys.modules["binaryninja.lowlevelil"] = llil_mod
