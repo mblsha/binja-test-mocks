@@ -218,12 +218,12 @@ if not _has_binja():
         @classmethod
         def __class_getitem__(cls, _name: str) -> Architecture:
             return cls()
-        
+
         @classmethod
         def register(cls) -> None:
             """Mock register method for architecture registration."""
             pass
-        
+
         def __getitem__(self, name: str) -> Architecture:
             """Mock getitem for architecture lookup."""
             arch = Architecture()
@@ -346,18 +346,18 @@ if not _has_binja():
 
     def LLIL_TEMP(n: int) -> ExpressionIndex:  # noqa: N802
         return ExpressionIndex(0x80000000 + n)
-    
+
     def LLIL_GET_TEMP_REG_INDEX(n: int) -> int:  # noqa: N802
         """Get the temporary register index from a temp expression index."""
         if isinstance(n, ExpressionIndex):
             return n - 0x80000000
         return n
-    
+
     class ILRegister:
         """Mock IL Register representation."""
         def __init__(self, index: int):
             self.index = index
-    
+
     class ILFlag:
         """Mock IL Flag representation."""
         def __init__(self, name: str):
@@ -649,13 +649,13 @@ if not _has_binja():
 
     def log_error(msg: str) -> None:
         print(f"[ERROR] {msg}", file=sys.stderr)
-    
+
     def log_info(msg: str) -> None:
         print(f"[INFO] {msg}")
-    
+
     def log_warn(msg: str) -> None:
         print(f"[WARN] {msg}", file=sys.stderr)
-    
+
     def log_debug(msg: str) -> None:
         print(f"[DEBUG] {msg}")
 
