@@ -281,6 +281,7 @@ if not _has_binja():
 
     class LowLevelILOperation(enum.IntEnum):
         """Low Level IL Operations"""
+
         LLIL_NOP = 0
         LLIL_SET_REG = 1
         LLIL_SET_REG_SPLIT = 2
@@ -326,6 +327,7 @@ if not _has_binja():
 
     class LowLevelILFlagCondition(enum.IntEnum):
         """Low Level IL Flag Conditions"""
+
         LLFC_E = 0
         LLFC_NE = 1
         LLFC_SLT = 2
@@ -355,11 +357,13 @@ if not _has_binja():
 
     class ILRegister:
         """Mock IL Register representation."""
+
         def __init__(self, index: int):
             self.index = index
 
     class ILFlag:
         """Mock IL Flag representation."""
+
         def __init__(self, name: str):
             self.name = name
 
