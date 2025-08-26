@@ -182,6 +182,46 @@ class MockLowLevelILFunction(LowLevelILFunction):
         """The architecture for this LLIL function."""
         return self._arch
 
+    @property
+    def operations(self) -> list[dict[str, Any]]:
+        """Convert MockLLIL objects to dictionary format expected by tests."""
+        result = []
+        for il in self.ils:
+            if hasattr(il, 'op') and hasattr(il, 'ops'):
+                # Convert operation enum to string
+                op_name = str(il.op).replace('LLIL_', '').lower()
+                op_dict = {"op": op_name}
+                
+                # Handle operands based on operation type
+                if hasattr(il, 'dest') and il.dest is not None:
+                    op_dict["dest"] = str(il.dest) if hasattr(il.dest, '__str__') else il.dest
+                
+                if hasattr(il, 'src') and il.src is not None:
+                    if hasattr(il.src, 'op'):
+                        # Nested operation
+                        src_op = str(il.src.op).replace('LLIL_', '').lower() if hasattr(il.src, 'op') else 'unknown'
+                        src_dict = {"op": src_op}
+                        if hasattr(il.src, 'constant'):
+                            src_dict["value"] = il.src.constant
+                        op_dict["src"] = src_dict
+                    else:
+                        op_dict["src"] = il.src
+                
+                # Handle jump/call destinations
+                if hasattr(il, 'dest') and op_name in ['goto', 'call']:
+                    if hasattr(il.dest, 'constant'):
+                        op_dict["dest"] = {"value": il.dest.constant}
+                    elif hasattr(il, 'constant'):
+                        op_dict["dest"] = {"value": il.constant}
+                
+                result.append(op_dict)
+            else:
+                # Fallback for simple operations
+                op_name = il.__class__.__name__.lower().replace('mock', '')
+                result.append({"op": op_name})
+        
+        return result
+
     def __del__(self) -> None:
         pass
 
@@ -221,3 +261,8 @@ class MockLowLevelILFunction(LowLevelILFunction):
     def get_label_for_address(self, arch: Any, addr: int) -> LowLevelILLabel:
         """Mock implementation for getting a label for an address."""
         return LowLevelILLabel()
+
+    def flag_condition(self, *args, **kwargs) -> Any:
+        """Mock flag_condition method for conditional operations."""
+        # Return a simple mock that tests can work with
+        return None

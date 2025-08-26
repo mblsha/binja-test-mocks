@@ -106,10 +106,12 @@ if not _has_binja():
     bn.enums = enums_mod  # type: ignore [attr-defined]
     sys.modules["binaryninja.enums"] = enums_mod
 
-    @dataclass
     class InstructionTextToken:
-        type: InstructionTextTokenType
-        text: str
+        def __init__(self, type_arg: InstructionTextTokenType, text: str, value: Any = None) -> None:
+            """Initialize InstructionTextToken, ignoring optional value parameter."""
+            self.type = type_arg
+            self.text = text
+            # Note: value parameter is ignored for compatibility with plugins that pass it
 
     bn.InstructionTextToken = InstructionTextToken  # type: ignore [attr-defined]
 
@@ -195,7 +197,7 @@ if not _has_binja():
         def __getitem__(self, name: str) -> BinaryViewType:
             """Mock getitem for view type lookup."""
             return self
-        
+
         def register_arch(self, arch_id: int, endianness: object, arch: object) -> None:
             """Mock register_arch method."""
             pass
@@ -229,17 +231,41 @@ if not _has_binja():
 
     arch_mod = types.ModuleType("binaryninja.architecture")
 
+    class RegistrationError(RuntimeError):
+        """Raised when architecture registration fails."""
+        pass
+
+    class NotRegisteredError(KeyError):
+        """Raised when looking up an unregistered architecture."""
+        pass
+
     class Architecture:
         name: str = ""  # Added type hint
+        _registry: dict[str, "Architecture"] = {}
 
         @classmethod
-        def __class_getitem__(cls, _name: str) -> Architecture:
-            return cls()
+        def __class_getitem__(cls, name: str) -> Architecture:
+            inst = cls._registry.get(name)
+            if inst is None:
+                raise NotRegisteredError(
+                    f"Architecture '{name}' is not registered in the mocks. "
+                    "Import your plugin and call register() before using Architecture['name']."
+                )
+            return inst
 
         @classmethod
         def register(cls) -> None:
-            """Mock register method for architecture registration."""
-            pass
+            """Register an architecture plugin for testing."""
+            name = getattr(cls, "name", None)
+            if not name:
+                raise RegistrationError("Architecture subclass must define a non-empty 'name'.")
+            # Store one canonical instance per architecture
+            cls._registry[name] = cls()
+
+        @classmethod
+        def clear_registry(cls) -> None:
+            """Clear all registered architectures (useful for test isolation)."""
+            cls._registry.clear()
 
         def __getitem__(self, name: str) -> Architecture:
             """Mock getitem for architecture lookup."""
@@ -284,6 +310,8 @@ if not _has_binja():
             return obj
 
     arch_mod.Architecture = Architecture  # type: ignore [attr-defined]
+    arch_mod.RegistrationError = RegistrationError  # type: ignore [attr-defined]
+    arch_mod.NotRegisteredError = NotRegisteredError  # type: ignore [attr-defined]
     arch_mod.RegisterName = RegisterName  # type: ignore [attr-defined]
     arch_mod.IntrinsicName = IntrinsicName  # type: ignore [attr-defined]
     arch_mod.FlagName = FlagName  # type: ignore [attr-defined]
