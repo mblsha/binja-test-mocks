@@ -182,42 +182,6 @@ class MockLowLevelILFunction(LowLevelILFunction):
         """The architecture for this LLIL function."""
         return self._arch
 
-    @property
-    def operations(self) -> list[dict[str, Any]]:
-        """Convert MockLLIL objects to dictionary format expected by tests."""
-        result = []
-        for il in self.ils:
-            # Extract operation name from the MockLLIL string representation
-            if hasattr(il, "op") and hasattr(il, "ops"):
-                # Convert operation enum to string, handling the format properly
-                op_name = str(il.op).replace("LLIL_", "").lower()
-                op_dict: dict[str, Any] = {"op": op_name}
-
-                # Parse operands from the ops list (which are the actual operands)
-                if hasattr(il, "ops") and il.ops:
-                    # For set_reg operations, first operand is dest, second is src
-                    if op_name == "set_reg" and len(il.ops) >= 2:
-                        op_dict["dest"] = str(il.ops[0]) if il.ops[0] is not None else ""
-                        # Handle source operand
-                        if hasattr(il.ops[1], "constant"):
-                            op_dict["src"] = {"op": "const", "value": il.ops[1].constant}
-                        else:
-                            op_dict["src"] = str(il.ops[1]) if il.ops[1] is not None else ""
-
-                    # For goto/call operations, operand contains the destination
-                    elif op_name in ["goto", "call"] and len(il.ops) >= 1:
-                        if hasattr(il.ops[0], "constant"):
-                            op_dict["dest"] = {"value": il.ops[0].constant}
-                        else:
-                            op_dict["dest"] = str(il.ops[0]) if il.ops[0] is not None else ""
-
-                result.append(op_dict)
-            else:
-                # Fallback: use class name for simple operations
-                op_name = il.__class__.__name__.lower().replace("mock", "")
-                result.append({"op": op_name})
-
-        return result
 
     def __del__(self) -> None:
         pass
