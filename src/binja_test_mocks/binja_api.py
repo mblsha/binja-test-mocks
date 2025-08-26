@@ -107,7 +107,9 @@ if not _has_binja():
     sys.modules["binaryninja.enums"] = enums_mod
 
     class InstructionTextToken:
-        def __init__(self, type_arg: InstructionTextTokenType, text: str, value: Any = None) -> None:
+        def __init__(
+            self, type_arg: InstructionTextTokenType, text: str, value: Any = None
+        ) -> None:
             """Initialize InstructionTextToken, ignoring optional value parameter."""
             self.type = type_arg
             self.text = text
@@ -233,10 +235,12 @@ if not _has_binja():
 
     class RegistrationError(RuntimeError):
         """Raised when architecture registration fails."""
+
         pass
 
     class NotRegisteredError(KeyError):
         """Raised when looking up an unregistered architecture."""
+
         pass
 
     class Architecture:
