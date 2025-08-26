@@ -221,3 +221,8 @@ class MockLowLevelILFunction(LowLevelILFunction):
     def get_label_for_address(self, arch: Any, addr: int) -> LowLevelILLabel:
         """Mock implementation for getting a label for an address."""
         return LowLevelILLabel()
+
+    def flag_condition(self, *args: Any, **kwargs: Any) -> Any:
+        """Mock flag_condition method for conditional operations."""
+        # Return a simple mock that tests can work with
+        return None
