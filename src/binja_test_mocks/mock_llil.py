@@ -182,7 +182,6 @@ class MockLowLevelILFunction(LowLevelILFunction):
         """The architecture for this LLIL function."""
         return self._arch
 
-
     def __del__(self) -> None:
         pass
 
