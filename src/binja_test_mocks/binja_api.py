@@ -15,7 +15,7 @@ import os
 import sys
 import types
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 # Force use of mock when FORCE_BINJA_MOCK environment variable is set
 _force_mock = os.environ.get("FORCE_BINJA_MOCK", "").lower() in ("1", "true", "yes")
@@ -241,7 +241,7 @@ if not _has_binja():
 
     class Architecture:
         name: str = ""  # Added type hint
-        _registry: dict[str, "Architecture"] = {}
+        _registry: ClassVar[dict[str, Architecture]] = {}
 
         @classmethod
         def __class_getitem__(cls, name: str) -> Architecture:
