@@ -29,6 +29,16 @@ def test_binja_api_import() -> None:
     assert RegisterName is not None
 
 
+def test_branchtype_has_unresolved_branch() -> None:
+    """Test that BranchType includes UnresolvedBranch for no-fallthrough CFG edges."""
+    import importlib
+
+    importlib.import_module("binja_test_mocks.binja_api")
+    branch_type = importlib.import_module("binaryninja.enums").BranchType
+
+    assert branch_type.UnresolvedBranch is not None
+
+
 def test_mock_llil() -> None:
     """Test mock LLIL functionality."""
     from binja_test_mocks import binja_api  # noqa: F401

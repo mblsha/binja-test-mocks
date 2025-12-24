@@ -52,6 +52,7 @@ if not _has_binja():
         FalseBranch = 2
         CallDestination = 3
         FunctionReturn = 4
+        UnresolvedBranch = 127
 
     class InstructionTextTokenType(enum.Enum):
         InstructionToken = 0
