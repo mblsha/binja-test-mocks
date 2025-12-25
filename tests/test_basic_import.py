@@ -51,6 +51,38 @@ def test_mock_llil() -> None:
     assert il.ils[0].op == "NOP"
 
 
+def test_mock_llil_instruction_surface() -> None:
+    """Test Binary Ninja-like LowLevelILInstruction helpers on MockLLIL."""
+    from typing import Any, cast
+
+    import pytest
+    from binaryninja.enums import LowLevelILOperation
+
+    from binja_test_mocks import binja_api  # noqa: F401
+    from binja_test_mocks.mock_llil import MockLowLevelILFunction
+
+    il = MockLowLevelILFunction()
+
+    const = cast(Any, il.const(4, -1))
+    assert const.operation == LowLevelILOperation.LLIL_CONST
+    assert const.operands == [-1]
+    assert const.size == 4
+    assert const.constant == -1
+
+    const_ptr = cast(Any, il.const_pointer(4, 0x1234))
+    assert const_ptr.operation == LowLevelILOperation.LLIL_CONST_PTR
+    assert const_ptr.operands == [0x1234]
+    assert const_ptr.size == 4
+    assert const_ptr.constant == 0x1234
+
+    reg = cast(Any, il.reg(4, "d0"))
+    assert reg.operation == LowLevelILOperation.LLIL_REG
+    assert reg.size == 4
+    assert getattr(reg.operands[0], "name", None) == "d0"
+    with pytest.raises(AttributeError):
+        _ = reg.constant
+
+
 def test_tokens() -> None:
     """Test token utilities."""
     from binja_test_mocks import binja_api  # noqa: F401

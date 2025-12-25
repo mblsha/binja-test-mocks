@@ -104,6 +104,32 @@ class MockLLIL:
     def bare_op(self) -> str:
         return self.op.split("{")[0].split(".")[0]
 
+    @property
+    def operation(self) -> Any:
+        """Binary Ninja-compatible operation enum for this instruction."""
+        from binaryninja.enums import LowLevelILOperation
+
+        return getattr(LowLevelILOperation, f"LLIL_{self.bare_op()}")
+
+    @property
+    def operands(self) -> list[Any]:
+        """Binary Ninja-compatible operand list for this instruction."""
+        return self.ops
+
+    @property
+    def size(self) -> int | None:
+        """Binary Ninja-compatible size (in bytes) for this instruction, if any."""
+        return self.width()
+
+    @property
+    def constant(self) -> int:
+        """Binary Ninja-compatible constant value for CONST/CONST_PTR instructions."""
+        from binaryninja.enums import LowLevelILOperation
+
+        if self.operation in (LowLevelILOperation.LLIL_CONST, LowLevelILOperation.LLIL_CONST_PTR):
+            return int(self.ops[0])
+        raise AttributeError("Instruction has no constant")
+
 
 ExprType = MockLLIL | ExpressionIndex
 

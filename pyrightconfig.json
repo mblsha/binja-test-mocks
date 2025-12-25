@@ -12,7 +12,7 @@
     "src/binja_test_mocks/stubs"
   ],
   "extraPaths": [
-    "/Users/mblsha/Library/Application Support/Binary Ninja/plugins/binja-test-mocks/src/binja_test_mocks/stubs"
+    "src/binja_test_mocks/stubs"
   ],
   "typeCheckingMode": "basic",
   "pythonVersion": "3.10",
@@ -29,5 +29,5 @@
   "reportInvalidTypeForm": false,
   "reportUnusedImport": false,
   "reportUnusedFunction": false,
-  "stubPath": "/Users/mblsha/Library/Application Support/Binary Ninja/plugins/binja-test-mocks/src/binja_test_mocks/stubs"
+  "stubPath": "src/binja_test_mocks/stubs"
 }
