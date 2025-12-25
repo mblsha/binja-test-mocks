@@ -105,6 +105,19 @@ def test_tokens() -> None:
     assert hasattr(text_token.__class__, "token_type")
 
 
+def test_instruction_text_token_accepts_value_and_size() -> None:
+    """Some plugins pass `value` + `size` to InstructionTextToken."""
+    from binaryninja import InstructionTextToken
+    from binaryninja.enums import InstructionTextTokenType
+
+    from binja_test_mocks import binja_api  # noqa: F401
+
+    tok = InstructionTextToken(InstructionTextTokenType.IntegerToken, "$01", 1, 1)
+    assert tok.text == "$01"
+    assert tok.value == 1
+    assert tok.size == 1
+
+
 def test_stubs_available() -> None:
     """Test that type stubs are accessible."""
     from pathlib import Path
