@@ -24,7 +24,11 @@ class LowLevelILFunction:
     def expr(self, *args: Any, size: int | None, flags: Any | None = None) -> ExpressionIndex: ...
     def reg(self, size: int, reg: RegisterName | ILRegister | RegisterIndex) -> ExpressionIndex: ...
     def set_reg(
-        self, size: int, reg: RegisterName | ILRegister | RegisterIndex, value: Any
+        self,
+        size: int,
+        reg: RegisterName | ILRegister | RegisterIndex,
+        value: Any,
+        flags: Any | None = None,
     ) -> ExpressionIndex: ...
     def intrinsic(
         self,
