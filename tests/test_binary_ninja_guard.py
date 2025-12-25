@@ -37,4 +37,3 @@ print("binaryninja" in _sys.modules)
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "False"
-
