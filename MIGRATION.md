@@ -53,19 +53,22 @@ Add binja-test-mocks to your `.gitignore` if using a local development install:
 binja-test-mocks/
 ```
 
-### 5. Update Test Files
+### 5. Update Test Setup (recommended: `tests/conftest.py`)
 
-Update all test files that use binja_helpers:
+Instead of setting `FORCE_BINJA_MOCK` (and importing `binja_api`) in every test file, prefer a
+single `tests/conftest.py` that runs before your tests import the plugin:
 
 ```python
-# Old
+# Old (per-test)
 import os
 os.environ["FORCE_BINJA_MOCK"] = "1"
 from binja_helpers import binja_api  # noqa: F401
 
-# New
+# New (recommended)
+# tests/conftest.py
 import os
-os.environ["FORCE_BINJA_MOCK"] = "1"
+
+os.environ.setdefault("FORCE_BINJA_MOCK", "1")
 from binja_test_mocks import binja_api  # noqa: F401
 ```
 
@@ -151,28 +154,35 @@ from binja_helpers.mock_llil import MockLowLevelILFunction
 
 **__init__.py:**
 ```python
+import sys
+import importlib.util
 import os
 from pathlib import Path
-import sys
 
 _plugin_dir = Path(__file__).resolve().parent
 if str(_plugin_dir) not in sys.path:
     sys.path.insert(0, str(_plugin_dir))
 
-# For testing, load mock API
-if os.environ.get("FORCE_BINJA_MOCK") == "1":
-    from binja_test_mocks import binja_api  # noqa: F401
+def _running_inside_binary_ninja() -> bool:
+    try:
+        return importlib.util.find_spec("binaryninjaui") is not None
+    except (ValueError, ImportError):
+        return False
 
-# Rest of plugin code...
+_force_mock = os.environ.get("FORCE_BINJA_MOCK", "").lower() in ("1", "true", "yes")
+_skip_registration = _force_mock and not _running_inside_binary_ninja()
+
+if not _skip_registration:
+    from ._bn_plugin import register
+
+    register(plugin_dir=_plugin_dir)
 ```
 
-**test_plugin.py:**
+**tests/conftest.py:**
 ```python
 import os
-os.environ["FORCE_BINJA_MOCK"] = "1"
-
+os.environ.setdefault("FORCE_BINJA_MOCK", "1")
 from binja_test_mocks import binja_api  # noqa: F401
-from binja_test_mocks.mock_llil import MockLowLevelILFunction
 ```
 
 **requirements.txt** or **pyproject.toml:**
