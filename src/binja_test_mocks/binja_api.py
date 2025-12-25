@@ -496,15 +496,15 @@ if not _has_binja():
                 processed_reg_obj = mreg(reg_obj)  # mreg is from .mock_llil
             return self._op("REG", size, processed_reg_obj)
 
-        def set_reg(self, size: int, reg_obj: object, value: object) -> object:
+        def set_reg(
+            self, size: int, reg_obj: object, value: object, flags: object | None = None
+        ) -> object:
             processed_reg_obj = reg_obj
             if isinstance(reg_obj, ExpressionIndex):
                 processed_reg_obj = mreg(f"TEMP{reg_obj - 0x80000000}")
             elif isinstance(reg_obj, str):
                 processed_reg_obj = mreg(reg_obj)
-            return self._op(
-                "SET_REG", size, processed_reg_obj, value, flags="0"
-            )  # Explicitly pass flags="0"
+            return self._op("SET_REG", size, processed_reg_obj, value, flags=flags)
 
         def add(self, size: int, a: object, b: object, flags: object | None = None) -> object:
             return self._op("ADD", size, a, b, flags=flags)
@@ -656,8 +656,13 @@ if not _has_binja():
     sys.modules["binaryninja.lowlevelil"] = llil_mod
     from .mock_llil import (
         MockFlag,
+        MockLLIL,
+        MockLowLevelILFunction,
         mreg,
     )  # mreg, MockFlag are used in the stub LowLevelILFunction
+
+    llil_mod.LowLevelILFunction = MockLowLevelILFunction  # type: ignore [attr-defined]
+    llil_mod.LowLevelILInstruction = MockLLIL  # type: ignore [attr-defined]
 
     @dataclass
     class InstructionInfo:
@@ -743,8 +748,39 @@ if not _has_binja():
             return None
 
     interaction_mod.UIContext = UIContext  # type: ignore [attr-defined]
+
+    class AddressField:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            return None
+
+    class ChoiceField:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            return None
+
+    def get_form_input(*_args: object, **_kwargs: object) -> bool:
+        return False
+
+    interaction_mod.AddressField = AddressField  # type: ignore[attr-defined]
+    interaction_mod.ChoiceField = ChoiceField  # type: ignore[attr-defined]
+    interaction_mod.get_form_input = get_form_input  # type: ignore[attr-defined]
+
     bn.interaction = interaction_mod  # type: ignore [attr-defined]
     bn.UIContext = UIContext  # type: ignore [attr-defined]  # Also add to main module
     sys.modules["binaryninja.interaction"] = interaction_mod
+
+    plugin_mod = types.ModuleType("binaryninja.plugin")
+
+    class PluginCommand:
+        @staticmethod
+        def register_for_address(*_args: object, **_kwargs: object) -> None:
+            return None
+
+        @staticmethod
+        def register(*_args: object, **_kwargs: object) -> None:
+            return None
+
+    plugin_mod.PluginCommand = PluginCommand  # type: ignore[attr-defined]
+    bn.plugin = plugin_mod  # type: ignore[attr-defined]
+    sys.modules["binaryninja.plugin"] = plugin_mod
 
     sys.modules["binaryninja"] = bn

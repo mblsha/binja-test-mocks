@@ -161,16 +161,18 @@ class MockGoto:
 class MockSourceFunction:
     """Mock source function with arch attribute."""
 
-    def __init__(self) -> None:
-        self.arch = MockArch()
+    def __init__(self, arch: Any) -> None:
+        self.arch = arch
 
 
 class MockLowLevelILFunction(LowLevelILFunction):
-    def __init__(self) -> None:
+    def __init__(self, arch: Any | None = None) -> None:
         # self.handle = MockHandle()
-        self._arch = MockArch()
+        self._arch = arch if arch is not None else MockArch()
         self.ils: list[MockLLIL] = []
-        self._source_function = MockSourceFunction()
+        self.current_address: int = 0
+        self._labels_by_addr: dict[int, LowLevelILLabel] = {}
+        self._source_function = MockSourceFunction(self._arch)
 
     @property
     def source_function(self) -> Any:
@@ -186,16 +188,17 @@ class MockLowLevelILFunction(LowLevelILFunction):
         pass
 
     def mark_label(self, label: LowLevelILLabel) -> Any:
-        # remove source_location from kwargs
-        result = MockLabel(label)
-        self.append(result)
-        return result
+        return label
 
     def goto(self, label: LowLevelILLabel, loc: ILSourceLocation | None = None) -> Any:
-        return MockGoto(label)
+        from types import SimpleNamespace
+
+        return self.expr(SimpleNamespace(name="LLIL_GOTO"), label, size=None)
 
     def if_expr(self, cond, t, f) -> Any:  # type: ignore
-        return MockIfExpr(cond, t, f)
+        from types import SimpleNamespace
+
+        return self.expr(SimpleNamespace(name="LLIL_IF"), cond, t, f, size=None)
 
     def intrinsic(self, outputs, name: str, params) -> Any:  # type: ignore
         return MockIntrinsic(name, outputs, params)
@@ -204,11 +207,21 @@ class MockLowLevelILFunction(LowLevelILFunction):
         self.ils.append(il)
         return len(self.ils) - 1
 
+    def __iter__(self) -> Any:
+        return iter(self.ils)
+
+    def __getitem__(self, idx: object) -> object:
+        if isinstance(idx, int):
+            return self.ils[idx]
+        return idx
+
     def expr(self, *args, **kwargs) -> ExprType:  # type: ignore
         llil, *ops = args
         kwargs.pop("source_location", None)
         size = kwargs.get("size")
         flags = kwargs.get("flags")
+        if flags in (0, "0"):
+            flags = None
 
         name = llil.name
         # remove the "LLIL_" prefix
@@ -218,11 +231,20 @@ class MockLowLevelILFunction(LowLevelILFunction):
         name = name + f"{{{flags}}}" if flags is not None else name
         return MockLLIL(name, ops)
 
-    def get_label_for_address(self, arch: Any, addr: int) -> LowLevelILLabel:
-        """Mock implementation for getting a label for an address."""
-        return LowLevelILLabel()
+    def get_label_for_address(self, arch: Any, addr: int) -> LowLevelILLabel | None:
+        """Return a stable label if one has been registered for an address."""
+        return self._labels_by_addr.get(int(addr))
 
-    def flag_condition(self, *args: Any, **kwargs: Any) -> Any:
-        """Mock flag_condition method for conditional operations."""
-        # Return a simple mock that tests can work with
-        return None
+    def register_label_for_address(
+        self, addr: int, label: LowLevelILLabel | None = None
+    ) -> LowLevelILLabel:
+        """Register a label for an address so `get_label_for_address` can return it."""
+        if label is None:
+            label = LowLevelILLabel()
+        self._labels_by_addr[int(addr)] = label
+        return label
+
+    def flag_condition(self, cond: int, loc: ILSourceLocation | None = None) -> ExprType:
+        from types import SimpleNamespace
+
+        return self.expr(SimpleNamespace(name="LLIL_FLAG_COND"), int(cond), None, size=None)
