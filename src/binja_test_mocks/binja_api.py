@@ -11,14 +11,46 @@ Import this module before importing anything from ``binaryninja``.
 from __future__ import annotations
 
 import enum
+import importlib.util
 import os
 import sys
 import types
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-# Force use of mock when FORCE_BINJA_MOCK environment variable is set
-_force_mock = os.environ.get("FORCE_BINJA_MOCK", "").lower() in ("1", "true", "yes")
+
+def _running_inside_binary_ninja() -> bool:
+    """Return True when executing inside the Binary Ninja application process.
+
+    This is intentionally *not* the same as "Binary Ninja is installed". Tests may
+    run on machines with a local BN install, while still needing mocks.
+    """
+
+    try:
+        if importlib.util.find_spec("binaryninjaui") is not None:
+            return True
+    except (ValueError, ImportError):
+        pass
+
+    exe = (sys.executable or "").lower()
+    if "binary ninja.app" in exe:
+        return True
+
+    exe_name = os.path.basename(exe)
+    return exe_name in ("binaryninja", "binaryninja.exe")
+
+
+_force_mock_requested = os.environ.get("FORCE_BINJA_MOCK", "").lower() in ("1", "true", "yes")
+_allow_mock_in_binja = os.environ.get("ALLOW_BINJA_MOCK_IN_BINARY_NINJA", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+_running_binja = _running_inside_binary_ninja()
+
+# Force use of mock when FORCE_BINJA_MOCK environment variable is set, but never
+# clobber a real Binary Ninja process by default.
+_force_mock = _force_mock_requested and not (_running_binja and not _allow_mock_in_binja)
 
 if not _force_mock:
     _binja_install = os.path.expanduser(
@@ -31,6 +63,11 @@ if not _force_mock:
 def _has_binja() -> bool:
     if _force_mock:
         return False
+    if _running_binja:
+        return True
+    mod = sys.modules.get("binaryninja")
+    if mod is not None and getattr(mod, "__file__", None):
+        return True
     try:
         import binaryninja  # noqa: F401  # type: ignore[import-not-found]
 
