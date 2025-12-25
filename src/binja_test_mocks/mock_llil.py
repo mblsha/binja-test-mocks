@@ -144,14 +144,13 @@ def mllil(op: str, ops: list[object] | None = None) -> MockLLIL:
     return MockLLIL(op, ops)
 
 
-@dataclass
 class MockIfExpr(MockLLIL):
     cond: Any
     t: Any
     f: Any
 
     def __init__(self, cond: Any, t: Any, f: Any) -> None:
-        super().__init__("IF", [])
+        super().__init__("IF", [cond, t, f])
         self.cond = cond
         self.t = t
         self.f = f
@@ -179,9 +178,12 @@ class MockIntrinsic(MockLLIL):
         self.params = params
 
 
-@dataclass
-class MockGoto:
+class MockGoto(MockLLIL):
     label: Any
+
+    def __init__(self, label: Any) -> None:
+        super().__init__("GOTO", [label])
+        self.label = label
 
 
 class MockSourceFunction:
@@ -214,17 +216,14 @@ class MockLowLevelILFunction(LowLevelILFunction):
         pass
 
     def mark_label(self, label: LowLevelILLabel) -> Any:
-        return label
+        self.ils.append(MockLabel(label))
+        return None
 
     def goto(self, label: LowLevelILLabel, loc: ILSourceLocation | None = None) -> Any:
-        from types import SimpleNamespace
-
-        return self.expr(SimpleNamespace(name="LLIL_GOTO"), label, size=None)
+        return MockGoto(label)
 
     def if_expr(self, cond, t, f) -> Any:  # type: ignore
-        from types import SimpleNamespace
-
-        return self.expr(SimpleNamespace(name="LLIL_IF"), cond, t, f, size=None)
+        return MockIfExpr(cond, t, f)
 
     def intrinsic(self, outputs, name: str, params) -> Any:  # type: ignore
         return MockIntrinsic(name, outputs, params)
