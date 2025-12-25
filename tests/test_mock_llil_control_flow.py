@@ -47,4 +47,3 @@ def test_mock_llil_control_flow_nodes() -> None:
 
     assert isinstance(il.ils[3], MockLabel)
     assert il.ils[3].label is label_false
-
