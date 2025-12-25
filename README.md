@@ -19,6 +19,11 @@ Mock Binary Ninja API for testing Binary Ninja plugins without requiring a Binar
 pip install binja-test-mocks
 ```
 
+With `uv`:
+```bash
+uv add --dev binja-test-mocks pytest
+```
+
 For development:
 ```bash
 pip install -e /path/to/binja-test-mocks
@@ -26,42 +31,96 @@ pip install -e /path/to/binja-test-mocks
 
 ## Quick Start
 
-### Basic Usage
+### Recommended pytest setup (mocks only in tests/CI)
 
 ```python
-# In your test files, set the environment variable before imports
+# tests/conftest.py
+#
+# Import binja-test-mocks *before* importing anything that does `import binaryninja`.
+# This keeps mocks scoped to unit tests/CI and avoids impacting real Binary Ninja.
+from __future__ import annotations
+
+import importlib.util
 import os
-os.environ["FORCE_BINJA_MOCK"] = "1"
 
-# Import the mock API before importing your plugin
-from binja_test_mocks import binja_api  # noqa: F401
+def _running_inside_binary_ninja() -> bool:
+    try:
+        return importlib.util.find_spec("binaryninjaui") is not None
+    except (ValueError, ImportError):
+        return False
 
-# Now you can import your plugin modules that use Binary Ninja
-from your_plugin import YourArchitecture
+if not _running_inside_binary_ninja():
+    os.environ.setdefault("FORCE_BINJA_MOCK", "1")
+
+    # Installs a stubbed `binaryninja` module into `sys.modules`.
+    from binja_test_mocks import binja_api  # noqa: F401
+
+    # Optional but common: configure architecture-specific IL size suffixes.
+    from binja_test_mocks import mock_llil
+
+    mock_llil.set_size_lookup(
+        {1: ".b", 2: ".w", 4: ".d", 8: ".q", 16: ".o"},
+        {"b": 1, "w": 2, "d": 4, "q": 8, "o": 16},
+    )
 ```
 
-### Example Test
+### Example: lift bytes to LLIL
 
 ```python
-import os
-os.environ["FORCE_BINJA_MOCK"] = "1"
+from binaryninja import lowlevelil
+from binja_test_mocks.mock_llil import MockLabel, MockLLIL, mllil
 
-from binja_test_mocks import binja_api  # noqa: F401
-from binja_test_mocks.mock_llil import MockLowLevelILFunction
 from your_plugin.arch import MyArchitecture
 
-def test_instruction_lifting():
-    # Create mock LLIL function
-    il = MockLowLevelILFunction()
-    
-    # Test your architecture's IL generation
+def lift_all(data: bytes, *, start_addr: int = 0) -> list[MockLLIL]:
     arch = MyArchitecture()
-    arch.get_instruction_low_level_il(b"\x90", 0x1000, il)
-    
-    # Verify the generated IL
-    assert len(il.operations) == 1
-    assert il.operations[0].op == "NOP"
+    il = lowlevelil.LowLevelILFunction(arch)
+
+    offset = 0
+    while offset < len(data):
+        il.current_address = start_addr + offset  # type: ignore[attr-defined]
+        length = arch.get_instruction_low_level_il(data[offset:], start_addr + offset, il)
+        assert length is not None and length > 0
+        offset += length
+
+    # Mock LLIL emits LABEL pseudo-nodes for control-flow; ignore them.
+    return [node for node in il if not isinstance(node, MockLabel)]
+
+def test_instruction_lifting() -> None:
+    assert lift_all(b"\x90") == [mllil("NOP")]
 ```
+
+## Safe Integration Guide (Binary Ninja plugins)
+
+### Keep mocks scoped to tests/CI
+
+- Put the `binja_test_mocks.binja_api` import in `tests/conftest.py` (not in your plugin package).
+- Set `FORCE_BINJA_MOCK=1` only for test runs (CI job env, `pytest`, etc.).
+- Keep `binja-test-mocks` in dev/test dependencies (don’t require it at runtime in Binary Ninja).
+
+`binja_test_mocks.binja_api` is defensive: even if `FORCE_BINJA_MOCK=1` is set globally, it will
+refuse to install mocks when it detects it’s running inside the Binary Ninja application process
+(unless you explicitly set `ALLOW_BINJA_MOCK_IN_BINARY_NINJA=1`).
+
+### Avoid registration side effects during tests
+
+If your plugin registers architectures/commands at import time, tests that import your package may
+accidentally run that registration code. A robust pattern is:
+
+- `your_plugin/_bn_plugin.py`: define `register()` (calls `Architecture.register()`, `PluginCommand.register_*()`, etc.)
+- `your_plugin/__init__.py`: call `register()` only when running inside Binary Ninja (and not under `FORCE_BINJA_MOCK`)
+
+This is the same approach used by `mblsha/binaryninja-m68k` (see
+[`mblsha/binaryninja-m68k#1`](https://github.com/mblsha/binaryninja-m68k/pull/1)).
+
+### Write tests against bytes (disasm + LLIL)
+
+- Disassembly: `arch.get_instruction_text(data, addr)` → join token `.text` → compare to expected string.
+- LLIL: `arch.get_instruction_low_level_il(...)` into a `LowLevelILFunction` → compare the resulting `MockLLIL` tree.
+- Control flow: the mock IL may include `MockLabel` nodes; filter or assert them as needed.
+
+If your plugin needs more `binaryninja.*` surface than is currently mocked, prefer adding it here
+(via PR) instead of copy/pasting ad-hoc stubs into each plugin repository.
 
 ## Components
 
@@ -89,28 +148,35 @@ Complete type stubs for Binary Ninja API in `stubs/binaryninja/`:
 
 ## Integration Examples
 
-### Plugin Structure
+### Plugin entrypoint pattern (safe with tests)
 
 ```python
 # your_plugin/__init__.py
+from __future__ import annotations
+
+import importlib.util
+import os
 import sys
 from pathlib import Path
 
-# Add plugin directory to path
-plugin_dir = str(Path(__file__).resolve().parent)
-if plugin_dir not in sys.path:
-    sys.path.insert(0, plugin_dir)
+_plugin_dir = Path(__file__).resolve().parent
+if str(_plugin_dir) not in sys.path:
+    sys.path.insert(0, str(_plugin_dir))
 
-# For testing, load mock API
-import os
-if os.environ.get("FORCE_BINJA_MOCK") == "1":
-    from binja_test_mocks import binja_api  # noqa: F401
+def _running_inside_binary_ninja() -> bool:
+    try:
+        return importlib.util.find_spec("binaryninjaui") is not None
+    except (ValueError, ImportError):
+        return False
 
-# Your normal plugin code
-from binaryninja import Architecture
-from .arch import MyArchitecture
+_force_mock = os.environ.get("FORCE_BINJA_MOCK", "").lower() in ("1", "true", "yes")
+_skip_registration = _force_mock and not _running_inside_binary_ninja()
 
-MyArchitecture.register()
+if not _skip_registration:
+    # Keep registration in a separate module to avoid side effects in unit tests.
+    from ._bn_plugin import register
+
+    register(plugin_dir=_plugin_dir)
 ```
 
 ### Type Checking Configuration
@@ -138,11 +204,17 @@ ignore_missing_imports = False
 ### Running Tests
 
 ```bash
-# Set environment variable and run pytest
-FORCE_BINJA_MOCK=1 pytest
+# Typical (with `tests/conftest.py` setting `FORCE_BINJA_MOCK`)
+pytest
 
-# Or use a test runner script
-python -m binja_test_mocks.scripts.run_tests
+# With uv
+uv run pytest
+
+# Belt-and-suspenders: force mocks even if you don't have a conftest
+FORCE_BINJA_MOCK=1 uv run pytest
+
+# Bundled runner (same as running pytest under the hood)
+binja-test-runner
 ```
 
 ## Advanced Usage
