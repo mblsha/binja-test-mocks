@@ -109,12 +109,23 @@ if not _has_binja():
 
     class InstructionTextToken:
         def __init__(
-            self, type_arg: InstructionTextTokenType, text: str, value: Any = None
+            self,
+            type_arg: InstructionTextTokenType,
+            text: str,
+            value: Any = None,
+            size: int | None = None,
+            *_args: Any,
+            **_kwargs: Any,
         ) -> None:
-            """Initialize InstructionTextToken, ignoring optional value parameter."""
+            """Initialize InstructionTextToken.
+
+            Binary Ninja's real API accepts optional `value` and `size` args.
+            Some plugins also pass additional positional arguments; ignore them.
+            """
             self.type = type_arg
             self.text = text
-            # Note: value parameter is ignored for compatibility with plugins that pass it
+            self.value = value
+            self.size = size
 
     bn.InstructionTextToken = InstructionTextToken  # type: ignore [attr-defined]
 
