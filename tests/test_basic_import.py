@@ -58,10 +58,15 @@ def test_mock_llil_instruction_surface() -> None:
     import pytest
     from binaryninja.enums import LowLevelILOperation
 
-    from binja_test_mocks import binja_api  # noqa: F401
+    from binja_test_mocks import (
+        binja_api,  # noqa: F401
+        mock_llil,
+    )
     from binja_test_mocks.mock_llil import MockLowLevelILFunction
 
     il = MockLowLevelILFunction()
+
+    mock_llil.set_size_lookup({1: ".b", 2: ".w", 4: ".d"}, {"b": 1, "w": 2, "d": 4})
 
     const = cast(Any, il.const(4, -1))
     assert const.operation == LowLevelILOperation.LLIL_CONST
