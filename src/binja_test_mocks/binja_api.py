@@ -112,6 +112,7 @@ if not _has_binja():
 
     class SymbolType(enum.Enum):
         FunctionSymbol = 0
+        DataSymbol = 1
 
     class Endianness(enum.Enum):
         LittleEndian = 0
@@ -142,6 +143,7 @@ if not _has_binja():
     # Note: LowLevelILOperation and LowLevelILFlagCondition will be added after llil_mod is defined
 
     bn.enums = enums_mod  # type: ignore [attr-defined]
+    bn.SymbolType = SymbolType  # type: ignore [attr-defined]
     sys.modules["binaryninja.enums"] = enums_mod
 
     class InstructionTextToken:
@@ -190,11 +192,36 @@ if not _has_binja():
             """Create an integer type."""
             return Type(f"int{width}")
 
+        @staticmethod
+        def structure_type(builder: object) -> Type:
+            """Create a structure type."""
+            return Type(f"struct:{builder}")
+
         def __repr__(self) -> str:
             return f"Type({self._type_str})"
 
+    class StructureType:
+        def __init__(self, width: int = 0, members: list[object] | None = None) -> None:
+            self.width = width
+            self.members = members or []
+
+    class StructureBuilder:
+        def __init__(self) -> None:
+            self.members: list[tuple[int, object, str]] = []
+
+        @classmethod
+        def create(cls) -> "StructureBuilder":
+            return cls()
+
+        def insert(self, offset: int, typ: object, name: str) -> None:
+            self.members.append((offset, typ, name))
+
     types_mod.Symbol = Symbol  # type: ignore [attr-defined]
     types_mod.Type = Type  # type: ignore [attr-defined]
+    types_mod.StructureType = StructureType  # type: ignore [attr-defined]
+    types_mod.StructureBuilder = StructureBuilder  # type: ignore [attr-defined]
+    bn.Symbol = Symbol  # type: ignore [attr-defined]
+    bn.Type = Type  # type: ignore [attr-defined]
     bn.types = types_mod  # type: ignore [attr-defined]
     sys.modules["binaryninja.types"] = types_mod
 
@@ -778,6 +805,9 @@ if not _has_binja():
         print(f"[DEBUG] {msg}")
 
     bn.log_error = log_error  # type: ignore [attr-defined]
+    bn.log_info = log_info  # type: ignore [attr-defined]
+    bn.log_warn = log_warn  # type: ignore [attr-defined]
+    bn.log_debug = log_debug  # type: ignore [attr-defined]
 
     log_mod = types.ModuleType("binaryninja.log")
     log_mod.log_error = log_error  # type: ignore [attr-defined]
@@ -805,16 +835,40 @@ if not _has_binja():
         def __init__(self, *_args: object, **_kwargs: object) -> None:
             return None
 
+    class SaveFileNameField:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            self.result = ""
+
+    class OpenFileNameField:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            self.result = ""
+
     def get_form_input(*_args: object, **_kwargs: object) -> bool:
         return False
 
     interaction_mod.AddressField = AddressField  # type: ignore[attr-defined]
     interaction_mod.ChoiceField = ChoiceField  # type: ignore[attr-defined]
+    interaction_mod.SaveFileNameField = SaveFileNameField  # type: ignore[attr-defined]
+    interaction_mod.OpenFileNameField = OpenFileNameField  # type: ignore[attr-defined]
     interaction_mod.get_form_input = get_form_input  # type: ignore[attr-defined]
 
     bn.interaction = interaction_mod  # type: ignore [attr-defined]
     bn.UIContext = UIContext  # type: ignore [attr-defined]  # Also add to main module
+    bn.SaveFileNameField = SaveFileNameField  # type: ignore [attr-defined]
+    bn.OpenFileNameField = OpenFileNameField  # type: ignore [attr-defined]
+    bn.get_form_input = get_form_input  # type: ignore [attr-defined]
     sys.modules["binaryninja.interaction"] = interaction_mod
+
+    class BackgroundTaskThread:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            self.progress = ""
+
+        def start(self) -> None:
+            run = getattr(self, "run", None)
+            if callable(run):
+                run()
+
+    bn.BackgroundTaskThread = BackgroundTaskThread  # type: ignore [attr-defined]
 
     plugin_mod = types.ModuleType("binaryninja.plugin")
 
@@ -828,6 +882,7 @@ if not _has_binja():
             return None
 
     plugin_mod.PluginCommand = PluginCommand  # type: ignore[attr-defined]
+    bn.PluginCommand = PluginCommand  # type: ignore[attr-defined]
     bn.plugin = plugin_mod  # type: ignore[attr-defined]
     sys.modules["binaryninja.plugin"] = plugin_mod
 
