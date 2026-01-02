@@ -88,3 +88,25 @@ InstructionTextToken: Any
 UIContext: Any
 
 log_error: Callable[[str], None]
+log_info: Callable[[str], None]
+log_warn: Callable[[str], None]
+log_debug: Callable[[str], None]
+
+class BackgroundTaskThread:
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    def start(self) -> None: ...
+
+class SaveFileNameField:
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    result: str
+
+class OpenFileNameField:
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    result: str
+
+def get_form_input(*args: Any, **kwargs: Any) -> bool: ...
+
+PluginCommand: Any
+SymbolType: Any
+Symbol: Any
+Type: Any
