@@ -210,7 +210,7 @@ if not _has_binja():
             self.members: list[tuple[int, object, str]] = []
 
         @classmethod
-        def create(cls) -> "StructureBuilder":
+        def create(cls) -> StructureBuilder:
             return cls()
 
         def insert(self, offset: int, typ: object, name: str) -> None:
