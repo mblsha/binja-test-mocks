@@ -84,7 +84,15 @@ class InstructionInfo:
     ) -> None: ...
 
 CallingConvention: Any
+Function: Any
 InstructionTextToken: Any
+HighLevelILFunction: Any
+HighLevelILInstruction: Any
+HighLevelILOperation: Any
+MockHighLevelILFunction: Any
+MockHighLevelILInstruction: Any
+MockHLILStorage: Any
+MockHLILVar: Any
 UIContext: Any
 
 log_error: Callable[[str], None]

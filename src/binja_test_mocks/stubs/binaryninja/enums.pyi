@@ -9,5 +9,6 @@ Endianness: Any
 FlagRole: Any
 ImplicitRegisterExtend: Any
 ActionType: Any
+HighLevelILOperation: Any
 LowLevelILOperation: Any
 LowLevelILFlagCondition: Any

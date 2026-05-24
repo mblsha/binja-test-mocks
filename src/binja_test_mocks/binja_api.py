@@ -132,6 +132,18 @@ if not _has_binja():
     class ImplicitRegisterExtend(enum.Enum):
         SignExtendToFullWidth = 0
 
+    from .mock_hlil import HLIL_OPERATION_NAMES
+
+    class _NamedIntEnum(enum.IntEnum):
+        def __str__(self) -> str:
+            return f"{type(self).__name__}.{self.name}"
+
+    HighLevelILOperation = enum.IntEnum(  # type: ignore[misc]
+        "HighLevelILOperation",
+        {name: index for index, name in enumerate(HLIL_OPERATION_NAMES)},
+        type=_NamedIntEnum,
+    )
+
     enums_mod.BranchType = BranchType  # type: ignore [attr-defined]
     enums_mod.InstructionTextTokenType = InstructionTextTokenType  # type: ignore [attr-defined]
     enums_mod.SegmentFlag = SegmentFlag  # type: ignore [attr-defined]
@@ -140,10 +152,12 @@ if not _has_binja():
     enums_mod.Endianness = Endianness  # type: ignore [attr-defined]
     enums_mod.FlagRole = FlagRole  # type: ignore [attr-defined]
     enums_mod.ImplicitRegisterExtend = ImplicitRegisterExtend  # type: ignore [attr-defined]
+    enums_mod.HighLevelILOperation = HighLevelILOperation  # type: ignore [attr-defined]
     # Note: LowLevelILOperation and LowLevelILFlagCondition will be added after llil_mod is defined
 
     bn.enums = enums_mod  # type: ignore [attr-defined]
     bn.SymbolType = SymbolType  # type: ignore [attr-defined]
+    bn.HighLevelILOperation = HighLevelILOperation  # type: ignore [attr-defined]
     sys.modules["binaryninja.enums"] = enums_mod
 
     class InstructionTextToken:
@@ -301,10 +315,25 @@ if not _has_binja():
             # Create a mock architecture
             from .mock_llil import MockArch
 
-            self.arch = MockArch()
+            self.arch = kwargs.get("arch", MockArch())
+            self.start = int(kwargs.get("start", 0))
+            self.name = str(kwargs.get("name", "sub_0"))
+            self.type = kwargs.get("type", "void()")
+            self.return_type = kwargs.get("return_type", "void")
+            self.calling_convention = kwargs.get(
+                "calling_convention",
+                types.SimpleNamespace(name=kwargs.get("calling_convention_name", "cdecl")),
+            )
+            self.parameter_vars = list(kwargs.get("parameter_vars", []))
+            self.hlil_if_available = kwargs.get(
+                "hlil_if_available",
+                kwargs.get("high_level_il"),
+            )
+            self.high_level_il = kwargs.get("high_level_il", self.hlil_if_available)
 
     function_mod.Function = Function  # type: ignore [attr-defined]
     bn.function = function_mod  # type: ignore [attr-defined]
+    bn.Function = Function  # type: ignore [attr-defined]
     sys.modules["binaryninja.function"] = function_mod
 
     arch_mod = types.ModuleType("binaryninja.architecture")
@@ -738,6 +767,33 @@ if not _has_binja():
 
     llil_mod.LowLevelILFunction = MockLowLevelILFunction  # type: ignore [attr-defined]
     llil_mod.LowLevelILInstruction = MockLLIL  # type: ignore [attr-defined]
+
+    highlevelil_mod = types.ModuleType("binaryninja.highlevelil")
+    from .mock_hlil import (
+        MockHighLevelILFunction,
+        MockHighLevelILInstruction,
+        MockHLILStorage,
+        MockHLILVar,
+        mhlil,
+    )
+
+    highlevelil_mod.HighLevelILOperation = HighLevelILOperation  # type: ignore [attr-defined]
+    highlevelil_mod.HighLevelILFunction = MockHighLevelILFunction  # type: ignore [attr-defined]
+    highlevelil_mod.HighLevelILInstruction = MockHighLevelILInstruction  # type: ignore [attr-defined]
+    highlevelil_mod.MockHighLevelILFunction = MockHighLevelILFunction  # type: ignore [attr-defined]
+    highlevelil_mod.MockHighLevelILInstruction = MockHighLevelILInstruction  # type: ignore [attr-defined]
+    highlevelil_mod.MockHLILStorage = MockHLILStorage  # type: ignore [attr-defined]
+    highlevelil_mod.MockHLILVar = MockHLILVar  # type: ignore [attr-defined]
+    highlevelil_mod.mhlil = mhlil  # type: ignore [attr-defined]
+
+    bn.highlevelil = highlevelil_mod  # type: ignore [attr-defined]
+    bn.HighLevelILFunction = MockHighLevelILFunction  # type: ignore [attr-defined]
+    bn.HighLevelILInstruction = MockHighLevelILInstruction  # type: ignore [attr-defined]
+    bn.MockHighLevelILFunction = MockHighLevelILFunction  # type: ignore [attr-defined]
+    bn.MockHighLevelILInstruction = MockHighLevelILInstruction  # type: ignore [attr-defined]
+    bn.MockHLILStorage = MockHLILStorage  # type: ignore [attr-defined]
+    bn.MockHLILVar = MockHLILVar  # type: ignore [attr-defined]
+    sys.modules["binaryninja.highlevelil"] = highlevelil_mod
 
     @dataclass
     class InstructionInfo:
